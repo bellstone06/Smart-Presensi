@@ -1,10 +1,3 @@
-Untuk membuat kamera membaca QR Code secara kilat (kurang dari setengah detik saat kertas diarahkan), kita harus melakukan "Tuning Performa" pada konfigurasi library scannernya.
-Ada tiga penyebab utama mengapa pembacaan terasa lambat pada kode sebelumnya:
- * FPS (Frame Per Second) terlalu rendah (10): Kamera hanya memindai gambar 10 kali per detik.
- * Mesin mencari semua jenis barcode: Secara default, sistem mencari barcode garis (seperti di minimarket) dan QR Code sekaligus. Ini membebani CPU HP/Laptop.
- * Efek Mirroring (Flip): Sistem membalikkan gambar (efek cermin) yang memakan memori RAM.
-Berikut adalah kode index.html yang sudah saya optimalkan ke Mode Performa Maksimal (Ultra-Fast Scanning). Saya menaikkan FPS menjadi 30, memaksa mesin hanya membaca QR Code, dan mempercepat waktu jeda antrean dari 3 detik menjadi 2 detik.
-Silakan timpa seluruh isi index.html Anda dengan kode ini:
 <!DOCTYPE html>
 <html lang="id">
 <head>
