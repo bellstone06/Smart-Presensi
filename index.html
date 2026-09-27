@@ -75,7 +75,7 @@
             document.getElementById('clockWidget').innerText = new Date().toLocaleTimeString('id-ID');
         }, 1000);
 
-        // 2. Fungsi Suara "Beep" Sintetis (Tanpa MP3 Eksternal)
+        // 2. Fungsi Suara "Beep" Sintetis
         function playBeep() {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioCtx.createOscillator();
@@ -87,10 +87,26 @@
             oscillator.type = 'sine';
             oscillator.frequency.value = 850; // Nada tinggi (850Hz)
             gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); // Durasi 0.1 detik
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); 
             
             oscillator.start(audioCtx.currentTime);
             oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // --- TAMBAHAN BARU: Fungsi Text-to-Speech (TTS) ---
+        function ucapkanSuara(teks) {
+            // Pastikan browser mendukung fitur SpeechSynthesis
+            if ('speechSynthesis' in window) {
+                // Hentikan suara yang mungkin masih berjalan sebelumnya
+                window.speechSynthesis.cancel();
+                
+                const suara = new SpeechSynthesisUtterance(teks);
+                suara.lang = 'id-ID'; // Mengatur bahasa ke Indonesia
+                suara.rate = 1.0;     // Kecepatan suara (normal)
+                suara.pitch = 1.1;    // Nada suara (sedikit lebih tinggi/ramah)
+                
+                window.speechSynthesis.speak(suara);
+            }
         }
 
         // 3. Fungsi Kontrol UI Notifikasi
@@ -124,7 +140,6 @@
             { 
                 fps: 10, // Turunkan ke 10 agar kamera sempat melakukan Autofocus
                 qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    // Buat area sensitif QR otomatis 70% dari ukuran layar/kamera
                     let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
                     let qrboxSize = Math.floor(minEdgeSize * 0.7);
                     return { width: qrboxSize, height: qrboxSize };
@@ -138,13 +153,13 @@
         function onScanSuccess(decodedText, decodedResult) {
             // Hentikan scan sementara agar tidak dobel input
             html5QrcodeScanner.pause(true); 
-            playBeep(); // Bunyikan suara beep
+            playBeep(); // Bunyikan suara beep pendek pertama
 
             try {
                 // Parsing Data JSON dari QR Code
                 const data = JSON.parse(decodedText);
                 
-                // Pastikan formatnya benar (Ada NIS, Nama, Kelas)
+                // Pastikan formatnya benar
                 if (!data.nama || !data.nis || !data.kelas) throw new Error("Format tidak lengkap");
 
                 // Tampilkan UI Loading
@@ -160,29 +175,38 @@
                     if (res.status === 'success') {
                         // Tampilkan UI Sukses
                         showStatus('success', 'Berhasil Absen!', `${data.nama}\n(${data.kelas})`);
-} else {
-                        // Tampilkan pesan penolakan dari Google Apps Script
+                        
+                        // --- UCAPKAN SUARA SUKSES ---
+                        ucapkanSuara(`${data.nama}, Presensi Masuk Berhasil.`);
+
+                    } else {
+                        // Tampilkan pesan penolakan
                         showStatus('error', 'Akses Ditolak', res.message);
+                        
+                        // --- UCAPKAN SUARA GAGAL/DUPLIKAT ---
+                        ucapkanSuara(`${data.nama}, Anda sudah absen hari ini.`);
                     }
                 })
                 .catch(err => {
                     showStatus('error', 'Koneksi Terputus', 'Cek koneksi internet Anda.');
+                    ucapkanSuara('Maaf, koneksi internet terputus.');
                 })
                 .finally(() => {
-                    // Tunggu 2.5 detik, lalu hilangkan notifikasi dan nyalakan scanner kembali
+                    // Beri waktu agak lama (3.5 detik) agar suara selesai berbicara sebelum scanner direset
                     setTimeout(() => {
                         hideStatus();
                         html5QrcodeScanner.resume();
-                    }, 2500);
+                    }, 3500);
                 });
 
             } catch (e) {
-                // Jika QR Code yang discan bukan milik sekolah (Format Salah)
                 showStatus('error', 'QR Code Ditolak', 'QR Code tidak terdaftar / format salah.');
+                ucapkanSuara('Format QR Code tidak terdaftar.');
+                
                 setTimeout(() => {
                     hideStatus();
                     html5QrcodeScanner.resume();
-                }, 2500);
+                }, 3000);
             }
         }
 
