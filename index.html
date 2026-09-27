@@ -85,7 +85,7 @@
             gainNode.connect(audioCtx.destination);
             
             oscillator.type = 'sine';
-            oscillator.frequency.value = 850; // Nada tinggi (850Hz)
+            oscillator.frequency.value = 850; 
             gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); 
             
@@ -93,19 +93,23 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
-        // --- TAMBAHAN BARU: Fungsi Text-to-Speech (TTS) ---
-        function ucapkanSuara(teks) {
-            // Pastikan browser mendukung fitur SpeechSynthesis
+        // --- TAMBAHAN: FUNGSI SUARA TEXT TO SPEECH (TTS) ---
+        function ucapkanSuara(namaSiswa, pesan) {
             if ('speechSynthesis' in window) {
-                // Hentikan suara yang mungkin masih berjalan sebelumnya
+                // Hentikan suara yang sedang berjalan agar tidak bertumpuk
                 window.speechSynthesis.cancel();
-                
-                const suara = new SpeechSynthesisUtterance(teks);
-                suara.lang = 'id-ID'; // Mengatur bahasa ke Indonesia
-                suara.rate = 1.0;     // Kecepatan suara (normal)
-                suara.pitch = 1.1;    // Nada suara (sedikit lebih tinggi/ramah)
-                
-                window.speechSynthesis.speak(suara);
+
+                // PENTING: Ubah teks menjadi huruf kecil (lowercase) agar tidak dieja per huruf.
+                // Contoh: "BUDI" akan dibaca B-U-D-I. Tapi "budi" akan dibaca kata utuh "Budi".
+                let namaNormal = namaSiswa.toLowerCase();
+                let teksLengkap = namaNormal + ". " + pesan;
+
+                let utterance = new SpeechSynthesisUtterance(teksLengkap);
+                utterance.lang = 'id-ID'; // Menggunakan suara bahasa Indonesia
+                utterance.rate = 0.9;     // Kecepatan sedikit dilambatkan agar lebih jelas
+                utterance.pitch = 1.0;    // Nada standar
+
+                window.speechSynthesis.speak(utterance);
             }
         }
 
@@ -134,11 +138,11 @@
             statusBox.classList.add('opacity-0', 'pointer-events-none');
         }
 
-       // 4. Konfigurasi Scanner yang Dioptimalkan
+        // 4. Konfigurasi Scanner yang Dioptimalkan
         const html5QrcodeScanner = new Html5QrcodeScanner(
             "reader", 
             { 
-                fps: 10, // Turunkan ke 10 agar kamera sempat melakukan Autofocus
+                fps: 10, 
                 qrbox: function(viewfinderWidth, viewfinderHeight) {
                     let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
                     let qrboxSize = Math.floor(minEdgeSize * 0.7);
@@ -153,7 +157,7 @@
         function onScanSuccess(decodedText, decodedResult) {
             // Hentikan scan sementara agar tidak dobel input
             html5QrcodeScanner.pause(true); 
-            playBeep(); // Bunyikan suara beep pendek pertama
+            playBeep(); // Bunyikan suara beep pendek
 
             try {
                 // Parsing Data JSON dari QR Code
@@ -173,40 +177,33 @@
                 .then(response => response.json())
                 .then(res => {
                     if (res.status === 'success') {
-                        // Tampilkan UI Sukses
+                        // Jika Sukses: Tampilkan pesan & Suarakan "Nama Siswa, Presensi masuk berhasil"
                         showStatus('success', 'Berhasil Absen!', `${data.nama}\n(${data.kelas})`);
-                        
-                        // --- UCAPKAN SUARA SUKSES ---
-                        ucapkanSuara(`${data.nama}, Presensi Masuk Berhasil.`);
-
+                        ucapkanSuara(data.nama, "Presensi masuk berhasil");
                     } else {
-                        // Tampilkan pesan penolakan
+                        // Jika Gagal (Misal sudah absen hari ini): Tampilkan & Suarakan penolakan
                         showStatus('error', 'Akses Ditolak', res.message);
-                        
-                        // --- UCAPKAN SUARA GAGAL/DUPLIKAT ---
-                        ucapkanSuara(`${data.nama}, Anda sudah absen hari ini.`);
+                        ucapkanSuara("Maaf " + data.nama, "Anda sudah absen hari ini");
                     }
                 })
                 .catch(err => {
                     showStatus('error', 'Koneksi Terputus', 'Cek koneksi internet Anda.');
-                    ucapkanSuara('Maaf, koneksi internet terputus.');
                 })
                 .finally(() => {
-                    // Beri waktu agak lama (3.5 detik) agar suara selesai berbicara sebelum scanner direset
+                    // Tunggu 3 detik (memberi waktu sistem bicara), lalu reset
                     setTimeout(() => {
                         hideStatus();
                         html5QrcodeScanner.resume();
-                    }, 3500);
+                    }, 3000);
                 });
 
             } catch (e) {
+                // Jika QR Code yang discan bukan format sekolah
                 showStatus('error', 'QR Code Ditolak', 'QR Code tidak terdaftar / format salah.');
-                ucapkanSuara('Format QR Code tidak terdaftar.');
-                
                 setTimeout(() => {
                     hideStatus();
                     html5QrcodeScanner.resume();
-                }, 3000);
+                }, 2500);
             }
         }
 
