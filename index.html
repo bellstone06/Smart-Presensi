@@ -4,47 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Absensi Sekolah</title>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- HTML5 QR Code Library -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; } /* Slate 900 */
-        
-        /* Modifikasi UI dari Library html5-qrcode bawaan agar lebih rapi */
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; } 
         #reader { border: none !important; }
         #reader__dashboard_section_csr span { color: white !important; }
         #reader__dashboard_section_swaplink { color: #60a5fa !important; text-decoration: none; margin-top: 10px; display: inline-block; }
-        #reader button { 
-            background-color: #4f46e5; color: white; border: none; padding: 8px 16px; 
-            border-radius: 8px; font-weight: 600; cursor: pointer; margin: 5px;
-        }
+        #reader button { background-color: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; margin: 5px; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen text-slate-200">
 
-    <!-- Header (Jam & Judul) -->
-    <div class="text-center mb-6">
+    <input type="text" id="rfidFocusInput" autocomplete="off" style="position: absolute; opacity: 0; pointer-events: none;">
+
+    <div class="text-center mb-6 mt-4">
         <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2">Portal Absensi</h1>
-        <p class="text-slate-400 text-lg">Arahkan QR Code Kartu Pelajar Anda ke Kamera</p>
-        <div id="clockWidget" class="text-3xl font-bold text-indigo-400 mt-4 bg-slate-800/50 inline-block px-6 py-2 rounded-full border border-slate-700/50 shadow-inner">
-            --:--:--
-        </div>
+        <p class="text-slate-400 text-lg">Arahkan QR Code Kartu Pelajar Anda ke Scanner</p>
+        <div id="clockWidget" class="text-3xl font-bold text-indigo-400 mt-4 bg-slate-800/50 inline-block px-6 py-2 rounded-full border border-slate-700/50 shadow-inner">--:--:--</div>
     </div>
 
-    <!-- Scanner Card -->
     <div class="bg-slate-800 p-4 rounded-3xl shadow-2xl shadow-indigo-500/10 w-full max-w-md border border-slate-700 relative overflow-hidden">
-        
-        <!-- Wadah Kamera -->
         <div class="bg-black rounded-2xl overflow-hidden relative border-4 border-slate-700">
             <div id="reader" class="w-full"></div>
-            <!-- Sudut Target Pemindai -->
-            <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
                 <div class="w-48 h-48 border-2 border-indigo-500/50 rounded-2xl relative">
                     <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-indigo-400 rounded-tl-xl"></div>
                     <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-indigo-400 rounded-tr-xl"></div>
@@ -54,8 +40,7 @@
             </div>
         </div>
 
-        <!-- Notifikasi Status -->
-        <div id="statusBox" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center z-10 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="statusBox" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center z-20 transition-opacity duration-300 opacity-0 pointer-events-none">
             <i id="statusIcon" class="fa-solid fa-spinner fa-spin text-6xl mb-4 text-indigo-500"></i>
             <h2 id="statusTitle" class="text-2xl font-bold text-white mb-1">Memproses...</h2>
             <p id="statusDesc" class="text-slate-300 text-center px-6">Mohon tunggu sebentar</p>
@@ -63,53 +48,39 @@
     </div>
     
     <div class="mt-8 text-slate-500 text-sm flex items-center gap-2">
-        <i class="fa-solid fa-bolt text-amber-400"></i> Mode Pemindaian Cepat Aktif
+        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Anti-Duplikat & Auto-Focus Aktif
     </div>
 
     <script>
-        // URL WEB APP APPS SCRIPT ANDA
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKVk3apqIkVMzvD4bTqZ7OCRLCLuPt4dg3h5Nfyx6v9DUMnECNTgB-i3ClIcsfKCw_mQ/exec';
 
-        // 1. Inisialisasi Jam Digital
-        setInterval(() => {
-            document.getElementById('clockWidget').innerText = new Date().toLocaleTimeString('id-ID');
-        }, 1000);
+        setInterval(() => { document.getElementById('clockWidget').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
 
-        // 2. Fungsi Suara "Beep" Sintetis
         function playBeep(isError = false) {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-            
             oscillator.type = 'sine';
             oscillator.frequency.value = isError ? 300 : 850; 
             gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); 
-            
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15); 
             oscillator.start(audioCtx.currentTime);
-            oscillator.stop(audioCtx.currentTime + 0.1);
+            oscillator.stop(audioCtx.currentTime + 0.15);
         }
 
-        // 3. FUNGSI SUARA TEXT TO SPEECH (TTS)
         function ucapkanSuara(namaSiswa, pesan) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                let namaNormal = namaSiswa.toLowerCase();
-                let teksLengkap = namaNormal + ". " + pesan;
-
+                let teksLengkap = namaSiswa.toLowerCase() + ". " + pesan;
                 let utterance = new SpeechSynthesisUtterance(teksLengkap);
                 utterance.lang = 'id-ID'; 
-                utterance.rate = 1.0;  // Kecepatan dinaikkan ke normal agar antrean lebih cepat
-                utterance.pitch = 1.0; 
-
+                utterance.rate = 1.0; 
                 window.speechSynthesis.speak(utterance);
             }
         }
 
-        // 4. Fungsi Kontrol UI Notifikasi
         const statusBox = document.getElementById('statusBox');
         const statusIcon = document.getElementById('statusIcon');
         const statusTitle = document.getElementById('statusTitle');
@@ -117,90 +88,114 @@
 
         function showStatus(type, title, desc) {
             statusBox.classList.remove('opacity-0', 'pointer-events-none');
-            
-            if (type === 'loading') {
-                statusIcon.className = "fa-solid fa-circle-notch fa-spin text-5xl mb-4 text-indigo-400";
-            } else if (type === 'success') {
-                statusIcon.className = "fa-solid fa-circle-check text-6xl mb-4 text-emerald-400";
-            } else if (type === 'error') {
-                statusIcon.className = "fa-solid fa-triangle-exclamation text-6xl mb-4 text-rose-500";
-            }
-            
+            if (type === 'loading') { statusIcon.className = "fa-solid fa-circle-notch fa-spin text-5xl mb-4 text-indigo-400"; } 
+            else if (type === 'success') { statusIcon.className = "fa-solid fa-circle-check text-6xl mb-4 text-emerald-400"; } 
+            else if (type === 'error') { statusIcon.className = "fa-solid fa-triangle-exclamation text-6xl mb-4 text-rose-500"; }
             statusTitle.innerText = title;
             statusDesc.innerText = desc;
         }
 
-        function hideStatus() {
-            statusBox.classList.add('opacity-0', 'pointer-events-none');
+        function hideStatus() { statusBox.classList.add('opacity-0', 'pointer-events-none'); }
+
+        let isProcessing = false;
+
+        function prosesAbsen(payload, namaTampilan, identifierNIS) {
+            if (isProcessing) return;
+            isProcessing = true;
+            try { html5QrcodeScanner.pause(true); } catch(e){}
+
+            const todayStr = new Date().toLocaleDateString('id-ID');
+            const localKey = `absen_${identifierNIS.trim()}`;
+
+            if (localStorage.getItem(localKey) === todayStr) {
+                playBeep(true);
+                showStatus('error', 'Akses Ditolak', 'Siswa sudah absen hari ini!');
+                ucapkanSuara("Maaf " + namaTampilan, "Anda sudah absen");
+                selesaiProses();
+                return; 
+            }
+
+            playBeep(false);
+            showStatus('loading', 'Menyimpan...', namaTampilan);
+
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ aksi: 'absen', ...payload }) })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    localStorage.setItem(localKey, todayStr);
+                    showStatus('success', 'Berhasil!', `${namaTampilan}`);
+                    ucapkanSuara(namaTampilan, "Presensi masuk berhasil");
+                } else {
+                    playBeep(true);
+                    showStatus('error', 'Ditolak', res.message);
+                    ucapkanSuara("Maaf " + namaTampilan, "Anda sudah absen");
+                }
+            })
+            .catch(err => {
+                playBeep(true);
+                showStatus('error', 'Terputus', 'Cek koneksi internet Anda.');
+            })
+            .finally(() => { selesaiProses(); });
         }
 
-        // ==========================================
-        // 5. KONFIGURASI SCANNER ULTRA-FAST
-        // ==========================================
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", 
-            { 
-                fps: 30, // DITAIKKAN KE 30 FPS: Kamera menangkap pergerakan jauh lebih mulus dan instan
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                    let qrboxSize = Math.floor(minEdgeSize * 0.65); // Dipersempit sedikit agar fokus kamera lebih tajam
-                    return { width: qrboxSize, height: qrboxSize };
-                },
-                aspectRatio: 1.0,
-                disableFlip: true, // PENTING: Mematikan efek cermin menghemat memori RAM perangkat secara drastis
-                formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] // PENTING: Paksa sistem HANYA mencari QR Code (sangat mempercepat CPU)
-            }, 
-            false
-        );
-        
-        function onScanSuccess(decodedText, decodedResult) {
-            html5QrcodeScanner.pause(true); 
-            playBeep(); 
+        function selesaiProses() {
+            setTimeout(() => {
+                hideStatus();
+                try { html5QrcodeScanner.resume(); } catch(e){}
+                isProcessing = false;
+                jagaFokusInput(); 
+            }, 2500); 
+        }
+
+        function tangkapDataScan(decodedText) {
+            if (isProcessing) return;
+            let dataSiswa = { nama: "", nis: "", kelas: "" };
+            let formatDikenali = false;
 
             try {
                 const data = JSON.parse(decodedText);
-                if (!data.nama || !data.nis || !data.kelas) throw new Error("Format tidak lengkap");
-
-                showStatus('loading', 'Menyimpan...', `${data.nama}`);
-
-                fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ aksi: 'absen', ...data })
-                })
-                .then(response => response.json())
-                .then(res => {
-                    if (res.status === 'success') {
-                        showStatus('success', 'Berhasil!', `${data.nama}\n(${data.kelas})`);
-                        ucapkanSuara(data.nama, "Presensi masuk berhasil");
-                    } else {
-                        playBeep(true);
-                        showStatus('error', 'Ditolak', res.message);
-                        ucapkanSuara("Maaf " + data.nama, "Anda sudah absen");
-                    }
-                })
-                .catch(err => {
-                    playBeep(true);
-                    showStatus('error', 'Terputus', 'Cek internet Anda.');
-                })
-                .finally(() => {
-                    // Waktu tunggu diturunkan dari 3000ms menjadi 2000ms agar siswa selanjutnya bisa langsung scan
-                    setTimeout(() => {
-                        hideStatus();
-                        html5QrcodeScanner.resume();
-                    }, 2000); 
-                });
-
+                if (data.nama && data.nis) { dataSiswa = data; formatDikenali = true; }
             } catch (e) {
+                const barisText = decodedText.split('\n');
+                barisText.forEach(baris => {
+                    if (baris.toUpperCase().includes('NIS:')) dataSiswa.nis = baris.split(':')[1].trim();
+                    if (baris.toUpperCase().includes('NAMA:')) dataSiswa.nama = baris.split(':')[1].trim();
+                    if (baris.toUpperCase().includes('KELAS:')) dataSiswa.kelas = baris.split(':')[1].trim();
+                });
+                if (dataSiswa.nis && dataSiswa.nama) formatDikenali = true;
+            }
+
+            if (formatDikenali) {
+                prosesAbsen(dataSiswa, dataSiswa.nama, dataSiswa.nis);
+            } else {
                 playBeep(true);
-                showStatus('error', 'QR Ditolak', 'Format QR salah.');
-                setTimeout(() => {
-                    hideStatus();
-                    html5QrcodeScanner.resume();
-                }, 2000);
+                showStatus('error', 'QR Ditolak', 'Format tidak dikenali.');
+                setTimeout(() => { hideStatus(); try{html5QrcodeScanner.resume();}catch(e){} }, 2000);
             }
         }
 
-        html5QrcodeScanner.render(onScanSuccess);
+        const scanInput = document.getElementById('rfidFocusInput');
+        function jagaFokusInput() { scanInput.focus(); }
+        window.addEventListener('load', jagaFokusInput);
+        document.addEventListener('click', jagaFokusInput);
+        document.addEventListener('blur', jagaFokusInput, true);
+        setInterval(jagaFokusInput, 1000);
+
+        scanInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const hasilScan = scanInput.value.trim();
+                scanInput.value = ''; 
+                if (hasilScan.length > 0) tangkapDataScan(hasilScan); 
+            }
+        });
+
+        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+            fps: 30, 
+            qrbox: function(w, h) { return { width: Math.floor(Math.min(w, h) * 0.65), height: Math.floor(Math.min(w, h) * 0.65) }; },
+            aspectRatio: 1.0, disableFlip: true, formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+        }, false);
+        
+        html5QrcodeScanner.render((text) => tangkapDataScan(text));
     </script>
 </body>
 </html>
