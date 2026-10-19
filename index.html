@@ -54,6 +54,9 @@
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKVk3apqIkVMzvD4bTqZ7OCRLCLuPt4dg3h5Nfyx6v9DUMnECNTgB-i3ClIcsfKCw_mQ/exec';
 
+        // Menghapus sisa cache localStorage lama agar tidak memblokir absen
+        localStorage.clear();
+
         setInterval(() => { document.getElementById('clockWidget').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
 
         function playBeep(isError = false) {
@@ -104,17 +107,6 @@
             isProcessing = true;
             try { html5QrcodeScanner.pause(true); } catch(e){}
 
-            const todayStr = new Date().toLocaleDateString('id-ID');
-            const localKey = `absen_${identifierNIS.trim()}`;
-
-            if (localStorage.getItem(localKey) === todayStr) {
-                playBeep(true);
-                showStatus('error', 'Akses Ditolak', 'Siswa sudah absen hari ini!');
-                ucapkanSuara("Maaf " + namaTampilan, "Anda sudah absen");
-                selesaiProses();
-                return; 
-            }
-
             playBeep(false);
             showStatus('loading', 'Menyimpan...', namaTampilan);
 
@@ -122,7 +114,6 @@
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'success') {
-                    localStorage.setItem(localKey, todayStr);
                     showStatus('success', 'Berhasil!', `${namaTampilan}`);
                     ucapkanSuara(namaTampilan, "Presensi masuk berhasil");
                 } else {
