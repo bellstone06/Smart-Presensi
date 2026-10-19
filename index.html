@@ -80,6 +80,13 @@
                 <div class="bg-black rounded-2xl overflow-hidden relative border border-slate-700/80 w-full h-full flex items-center justify-center">
                     <div id="reader" class="w-full h-full"></div>
                     
+                    <!-- Pesan Error Jika Kamera Gagal Aktif -->
+                    <div id="cameraErrorMsg" class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-4 text-center z-20 hidden">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-3xl mb-2"></i>
+                        <p class="text-xs text-slate-300 font-semibold">Kamera Tidak Dapat Diakses</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Pastikan izin kamera aktif dan gunakan HTTPS.</p>
+                    </div>
+
                     <!-- Bingkai Panduan QR Potret -->
                     <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
                         <div id="scanFrame" class="w-48 h-48 border-2 border-indigo-500/40 rounded-3xl relative transition-all duration-200">
@@ -150,6 +157,7 @@
         const statusTitle = document.getElementById('statusTitle');
         const statusDesc = document.getElementById('statusDesc');
         const scanFrame = document.getElementById('scanFrame');
+        const cameraErrorMsg = document.getElementById('cameraErrorMsg');
         let resetTimer = null;
         let hadirCount = 0;
 
@@ -235,8 +243,8 @@
                 const data = JSON.parse(decodedText);
                 if (data.nama && data.nis) { dataSiswa = data; formatDikenali = true; }
             } catch (e) {
-                const barisTest = decodedText.split('\n');
-                barisTest.forEach(baris => {
+                const barisText = decodedText.split('\n');
+                barisText.forEach(baris => {
                     if (baris.toUpperCase().includes('NIS:')) dataSiswa.nis = baris.split(':')[1].trim();
                     if (baris.toUpperCase().includes('NAMA:')) dataSiswa.nama = baris.split(':')[1].trim();
                     if (baris.toUpperCase().includes('KELAS:')) dataSiswa.kelas = baris.split(':')[1].trim();
@@ -280,19 +288,19 @@
                 formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
             };
 
-            // Konfigurasi tambahan agar kamera mengunci fokus makro/jarak dekat (cocok untuk kartu ID card)
             const constraints = {
                 facingMode: facingMode,
-                focusMode: "continuous", // Meminta sistem menjaga fokus secara berkelanjutan
+                focusMode: "continuous",
                 advanced: [{ focusMode: "continuous" }]
             };
+
+            cameraErrorMsg.classList.add('hidden');
 
             html5QrCode.start(
                 constraints, 
                 config, 
                 (decodedText) => tangkapDataScan(decodedText)
             ).catch(err => {
-                // Fallback jika mode advanced tidak didukung perangkat tertentu
                 html5QrCode.start(
                     { facingMode: facingMode }, 
                     config, 
@@ -301,6 +309,8 @@
                     if (facingMode === "user") {
                         currentFacingMode = "environment";
                         mulaiKamera("environment");
+                    } else {
+                        cameraErrorMsg.classList.remove('hidden');
                     }
                 });
             });
