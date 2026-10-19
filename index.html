@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Absensi Sekolah</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -10,88 +10,51 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #090e1a; 
-            overflow-x: hidden;
-        } 
-        #reader { border: none !important; width: 100% !important; }
-        #reader video { 
-            object-fit: cover !important; 
-            border-radius: 1rem !important;
-            min-height: 360px;
-        }
-        #reader__dashboard_section_csr span { color: white !important; font-size: 0.875rem; }
-        #reader__dashboard_section_swaplink { color: #60a5fa !important; text-decoration: none; margin-top: 8px; display: inline-block; font-size: 0.85rem; }
-        #reader button { background-color: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; margin: 6px; font-size: 0.875rem; }
-        #reader select { background-color: #1e293b; color: white; padding: 6px 10px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 6px; max-width: 90%; }
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; } 
+        #reader { border: none !important; }
+        #reader__dashboard_section_csr span { color: white !important; }
+        #reader__dashboard_section_swaplink { color: #60a5fa !important; text-decoration: none; margin-top: 10px; display: inline-block; }
+        #reader button { background-color: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; margin: 5px; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen text-slate-200 p-0 sm:p-4">
+<body class="flex flex-col items-center justify-center min-h-screen text-slate-200">
 
-    <!-- Input tersembunyi untuk menangkap scanner fisik / RFID -->
     <input type="text" id="rfidFocusInput" autocomplete="off" style="position: absolute; opacity: 0; pointer-events: none;">
 
-    <!-- Frame Aplikasi Vertikal (Portrait / Kiosk Mode) -->
-    <main class="w-full max-w-[420px] min-h-screen sm:min-h-[880px] sm:max-h-[95vh] bg-slate-900 sm:rounded-[2.5rem] sm:border-[6px] sm:border-slate-800 shadow-2xl flex flex-col justify-between p-6 relative overflow-hidden">
-        
-        <!-- Bagian Atas: Header & Jam -->
-        <header class="text-center mt-2">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-3">
-                <i class="fa-solid fa-qrcode text-2xl"></i>
-            </div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">Portal Absensi</h1>
-            <p class="text-slate-400 text-sm mt-1 px-4">Arahkan QR Code Kartu Pelajar Anda ke Kamera</p>
-            
-            <div id="clockWidget" class="text-2xl font-bold text-indigo-400 mt-4 bg-slate-800/80 inline-block px-6 py-2 rounded-2xl border border-slate-700/60 shadow-inner tracking-wider">
-                --:--:--
-            </div>
-        </header>
+    <div class="text-center mb-6 mt-4">
+        <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2">Portal Absensi</h1>
+        <p class="text-slate-400 text-lg">Arahkan QR Code Kartu Pelajar Anda ke Scanner</p>
+        <div id="clockWidget" class="text-3xl font-bold text-indigo-400 mt-4 bg-slate-800/50 inline-block px-6 py-2 rounded-full border border-slate-700/50 shadow-inner">--:--:--</div>
+    </div>
 
-        <!-- Bagian Tengah: Area Kamera Vertikal -->
-        <section class="my-auto py-4 w-full flex-1 flex flex-col justify-center">
-            <div class="bg-slate-800 p-3 rounded-3xl shadow-2xl shadow-indigo-500/10 w-full border border-slate-700 relative overflow-hidden flex-1 flex flex-col justify-center max-h-[480px]">
-                
-                <div class="bg-black rounded-2xl overflow-hidden relative border-2 border-slate-700/80 w-full h-full flex items-center justify-center min-h-[360px]">
-                    <div id="reader" class="w-full h-full"></div>
-                    
-                    <!-- Bingkai Panduan QR -->
-                    <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-                        <div class="w-52 h-52 border-2 border-indigo-500/40 rounded-3xl relative">
-                            <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-indigo-400 rounded-tl-2xl"></div>
-                            <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-indigo-400 rounded-tr-2xl"></div>
-                            <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-indigo-400 rounded-bl-2xl"></div>
-                            <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-indigo-400 rounded-br-2xl"></div>
-                        </div>
-                    </div>
+    <div class="bg-slate-800 p-4 rounded-3xl shadow-2xl shadow-indigo-500/10 w-full max-w-md border border-slate-700 relative overflow-hidden">
+        <div class="bg-black rounded-2xl overflow-hidden relative border-4 border-slate-700">
+            <div id="reader" class="w-full"></div>
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+                <div class="w-48 h-48 border-2 border-indigo-500/50 rounded-2xl relative">
+                    <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-indigo-400 rounded-tl-xl"></div>
+                    <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-indigo-400 rounded-tr-xl"></div>
+                    <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-indigo-400 rounded-bl-xl"></div>
+                    <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-indigo-400 rounded-br-xl"></div>
                 </div>
-
-                <!-- Overlay Status (Loading / Berhasil / Gagal) -->
-                <div id="statusBox" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center z-20 transition-opacity duration-300 opacity-0 pointer-events-none p-6 text-center">
-                    <i id="statusIcon" class="fa-solid fa-spinner fa-spin text-6xl mb-4 text-indigo-500"></i>
-                    <h2 id="statusTitle" class="text-2xl font-bold text-white mb-2">Memproses...</h2>
-                    <p id="statusDesc" class="text-slate-300 text-base">Mohon tunggu sebentar</p>
-                </div>
-
             </div>
-        </section>
-        
-        <!-- Bagian Bawah: Footer Info -->
-        <footer class="text-center pb-2">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-800 text-slate-400 text-xs">
-                <i class="fa-solid fa-shield-halved text-emerald-400"></i>
-                <span>Anti-Duplikat & Auto-Focus Aktif</span>
-            </div>
-        </footer>
+        </div>
 
-    </main>
+        <div id="statusBox" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center z-20 transition-opacity duration-300 opacity-0 pointer-events-none">
+            <i id="statusIcon" class="fa-solid fa-spinner fa-spin text-6xl mb-4 text-indigo-500"></i>
+            <h2 id="statusTitle" class="text-2xl font-bold text-white mb-1">Memproses...</h2>
+            <p id="statusDesc" class="text-slate-300 text-center px-6">Mohon tunggu sebentar</p>
+        </div>
+    </div>
+    
+    <div class="mt-8 text-slate-500 text-sm flex items-center gap-2">
+        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Anti-Duplikat & Auto-Focus Aktif
+    </div>
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKVk3apqIkVMzvD4bTqZ7OCRLCLuPt4dg3h5Nfyx6v9DUMnECNTgB-i3ClIcsfKCw_mQ/exec';
 
-        setInterval(() => { 
-            document.getElementById('clockWidget').innerText = new Date().toLocaleTimeString('id-ID'); 
-        }, 1000);
+        setInterval(() => { document.getElementById('clockWidget').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
 
         function playBeep(isError = false) {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -228,13 +191,8 @@
 
         const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
             fps: 30, 
-            qrbox: function(w, h) { 
-                const size = Math.floor(Math.min(w, h) * 0.7);
-                return { width: size, height: size }; 
-            },
-            aspectRatio: 0.75, // Rasio potret (3:4 vertikal)
-            disableFlip: true, 
-            formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+            qrbox: function(w, h) { return { width: Math.floor(Math.min(w, h) * 0.65), height: Math.floor(Math.min(w, h) * 0.65) }; },
+            aspectRatio: 1.0, disableFlip: true, formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
         }, false);
         
         html5QrcodeScanner.render((text) => tangkapDataScan(text));
