@@ -22,7 +22,7 @@
             height: 100% !important; 
             object-fit: cover !important; 
             border-radius: 1rem !important;
-            transform: scaleX(-1); /* Efek cermin untuk kamera depan */
+            transform: scaleX(-1);
         }
         #reader__scan_region { width: 100% !important; height: 100% !important; }
         #reader__dashboard { display: none !important; }
@@ -132,7 +132,7 @@
             } catch (e) {}
         }
 
-        // Menggunakan Nama Lengkap secara utuh (tidak dipotong)
+        // Menggunakan Nama Lengkap secara utuh
         function ucapkanSuara(namaSiswa, pesan) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -193,7 +193,6 @@
         function prosesAbsen(payload, namaTampilan, identifierNIS) {
             playBeep(false);
 
-            // Menampilkan nama lengkap secara utuh pada kartu status & suara
             tampilkanStatus('success', 'Berhasil', namaTampilan, `NIS: ${identifierNIS} ${payload.kelas ? '• ' + payload.kelas : ''}`);
             ucapkanSuara(namaTampilan, "presensi masuk berhasil");
 
