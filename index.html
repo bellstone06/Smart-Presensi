@@ -132,7 +132,6 @@
             } catch (e) {}
         }
 
-        // Menggunakan Nama Lengkap secara utuh
         function ucapkanSuara(namaSiswa, pesan) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -236,8 +235,8 @@
                 const data = JSON.parse(decodedText);
                 if (data.nama && data.nis) { dataSiswa = data; formatDikenali = true; }
             } catch (e) {
-                const barisText = decodedText.split('\n');
-                barisText.forEach(baris => {
+                const barisTest = decodedText.split('\n');
+                barisTest.forEach(baris => {
                     if (baris.toUpperCase().includes('NIS:')) dataSiswa.nis = baris.split(':')[1].trim();
                     if (baris.toUpperCase().includes('NAMA:')) dataSiswa.nama = baris.split(':')[1].trim();
                     if (baris.toUpperCase().includes('KELAS:')) dataSiswa.kelas = baris.split(':')[1].trim();
@@ -249,7 +248,7 @@
                 prosesAbsen(dataSiswa, dataSiswa.nama, dataSiswa.nis);
             } else {
                 playBeep(true);
-                tampilkanStatus('error', 'Tidak Terdaftar', 'QR Tidak Dikenali', 'Mohon maaf, Anda tidak terdaftar');
+                tampilkanStatus('error', 'Tidak Terdaftar', 'QR Tidak Dikenal', 'Mohon maaf, Anda tidak terdaftar');
                 ucapkanSuara("", "Mohon Maaf, anda tidak terdaftar");
             }
         }
@@ -281,15 +280,29 @@
                 formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
             };
 
+            // Konfigurasi tambahan agar kamera mengunci fokus makro/jarak dekat (cocok untuk kartu ID card)
+            const constraints = {
+                facingMode: facingMode,
+                focusMode: "continuous", // Meminta sistem menjaga fokus secara berkelanjutan
+                advanced: [{ focusMode: "continuous" }]
+            };
+
             html5QrCode.start(
-                { facingMode: facingMode }, 
+                constraints, 
                 config, 
                 (decodedText) => tangkapDataScan(decodedText)
             ).catch(err => {
-                if (facingMode === "user") {
-                    currentFacingMode = "environment";
-                    mulaiKamera("environment");
-                }
+                // Fallback jika mode advanced tidak didukung perangkat tertentu
+                html5QrCode.start(
+                    { facingMode: facingMode }, 
+                    config, 
+                    (decodedText) => tangkapDataScan(decodedText)
+                ).catch(e => {
+                    if (facingMode === "user") {
+                        currentFacingMode = "environment";
+                        mulaiKamera("environment");
+                    }
+                });
             });
         }
 
