@@ -80,13 +80,6 @@
                 <div class="bg-black rounded-2xl overflow-hidden relative border border-slate-700/80 w-full h-full flex items-center justify-center">
                     <div id="reader" class="w-full h-full"></div>
                     
-                    <!-- Pesan Error Jika Kamera Gagal Aktif -->
-                    <div id="cameraErrorMsg" class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-4 text-center z-20 hidden">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-3xl mb-2"></i>
-                        <p class="text-xs text-slate-300 font-semibold">Kamera Tidak Dapat Diakses</p>
-                        <p class="text-[11px] text-slate-400 mt-1">Pastikan izin kamera aktif dan gunakan HTTPS.</p>
-                    </div>
-
                     <!-- Bingkai Panduan QR Potret -->
                     <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
                         <div id="scanFrame" class="w-48 h-48 border-2 border-indigo-500/40 rounded-3xl relative transition-all duration-200">
@@ -139,6 +132,7 @@
             } catch (e) {}
         }
 
+        // Menggunakan Nama Lengkap secara utuh
         function ucapkanSuara(namaSiswa, pesan) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -157,7 +151,6 @@
         const statusTitle = document.getElementById('statusTitle');
         const statusDesc = document.getElementById('statusDesc');
         const scanFrame = document.getElementById('scanFrame');
-        const cameraErrorMsg = document.getElementById('cameraErrorMsg');
         let resetTimer = null;
         let hadirCount = 0;
 
@@ -256,7 +249,7 @@
                 prosesAbsen(dataSiswa, dataSiswa.nama, dataSiswa.nis);
             } else {
                 playBeep(true);
-                tampilkanStatus('error', 'Tidak Terdaftar', 'QR Tidak Dikenal', 'Mohon maaf, Anda tidak terdaftar');
+                tampilkanStatus('error', 'Tidak Terdaftar', 'QR Tidak Dikenali', 'Mohon maaf, Anda tidak terdaftar');
                 ucapkanSuara("", "Mohon Maaf, anda tidak terdaftar");
             }
         }
@@ -288,31 +281,15 @@
                 formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
             };
 
-            const constraints = {
-                facingMode: facingMode,
-                focusMode: "continuous",
-                advanced: [{ focusMode: "continuous" }]
-            };
-
-            cameraErrorMsg.classList.add('hidden');
-
             html5QrCode.start(
-                constraints, 
+                { facingMode: facingMode }, 
                 config, 
                 (decodedText) => tangkapDataScan(decodedText)
             ).catch(err => {
-                html5QrCode.start(
-                    { facingMode: facingMode }, 
-                    config, 
-                    (decodedText) => tangkapDataScan(decodedText)
-                ).catch(e => {
-                    if (facingMode === "user") {
-                        currentFacingMode = "environment";
-                        mulaiKamera("environment");
-                    } else {
-                        cameraErrorMsg.classList.remove('hidden');
-                    }
-                });
+                if (facingMode === "user") {
+                    currentFacingMode = "environment";
+                    mulaiKamera("environment");
+                }
             });
         }
 
