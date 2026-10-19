@@ -76,7 +76,7 @@
         function ucapkanSuara(namaSiswa, pesan) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                let teksLengkap = namaSiswa.toLowerCase() + ". " + pesan;
+                let teksLengkap = namaSiswa ? (namaSiswa.toLowerCase() + ". " + pesan) : pesan;
                 let utterance = new SpeechSynthesisUtterance(teksLengkap);
                 utterance.lang = 'id-ID'; 
                 utterance.rate = 1.0; 
@@ -118,8 +118,16 @@
                     ucapkanSuara(namaTampilan, "Presensi masuk berhasil");
                 } else {
                     playBeep(true);
-                    showStatus('error', 'Ditolak', res.message);
-                    ucapkanSuara("Maaf " + namaTampilan, "Anda sudah absen");
+                    const pesanServer = (res.message || "").toLowerCase();
+                    
+                    // Cek apakah penolakan karena data siswa tidak ada / tidak terdaftar di Sheet
+                    if (pesanServer.includes('tidak terdaftar') || pesanServer.includes('tidak ditemukan') || pesanServer.includes('tidak ada') || res.status === 'not_found') {
+                        showStatus('error', 'Tidak Terdaftar', res.message || 'Data siswa tidak ditemukan.');
+                        ucapkanSuara("", "Mohon Maaf, anda tidak terdaftar");
+                    } else {
+                        showStatus('error', 'Ditolak', res.message);
+                        ucapkanSuara("Maaf " + namaTampilan, "Anda sudah absen");
+                    }
                 }
             })
             .catch(err => {
@@ -159,9 +167,12 @@
             if (formatDikenali) {
                 prosesAbsen(dataSiswa, dataSiswa.nama, dataSiswa.nis);
             } else {
+                isProcessing = true;
+                try { html5QrcodeScanner.pause(true); } catch(e){}
                 playBeep(true);
-                showStatus('error', 'QR Ditolak', 'Format tidak dikenali.');
-                setTimeout(() => { hideStatus(); try{html5QrcodeScanner.resume();}catch(e){} }, 2000);
+                showStatus('error', 'Tidak Terdaftar', 'Data siswa tidak ditemukan / QR tidak dikenali.');
+                ucapkanSuara("", "Mohon Maaf, anda tidak terdaftar");
+                selesaiProses();
             }
         }
 
