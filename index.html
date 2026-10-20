@@ -13,8 +13,9 @@
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #090e1a; 
-            overflow-x: hidden;
+            overflow: hidden;
             user-select: none;
+            -webkit-user-select: none;
         } 
         #reader { width: 100% !important; height: 100% !important; border: none !important; }
         #reader video { 
@@ -26,27 +27,33 @@
         }
         #reader__scan_region { width: 100% !important; height: 100% !important; }
         #reader__dashboard { display: none !important; }
+
+        /* Penyesuaian tampilan bersih saat Fullscreen Kiosk aktif */
+        :fullscreen main, :-webkit-full-screen main {
+            max-height: 100vh !important;
+            height: 100vh !important;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen text-slate-200 p-0 sm:p-4">
 
-    <!-- OVERLAY UNLOCK AUDIO KHUSUS TABLET / MOBILE -->
-    <div id="audioUnlockOverlay" onclick="aktifkanAudioTablet()" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-opacity duration-300">
+    <!-- OVERLAY UNLOCK AUDIO & FULLSCREEN KHUSUS TABLET / MOBILE -->
+    <div id="audioUnlockOverlay" onclick="aktifkanKioskTablet()" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-opacity duration-300">
         <div class="w-20 h-20 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-2xl shadow-indigo-500/40 mb-5 animate-bounce">
-            <i class="fa-solid fa-volume-high text-3xl"></i>
+            <i class="fa-solid fa-expand text-3xl"></i>
         </div>
-        <h2 class="text-2xl font-extrabold text-white mb-2">Sentuh Layar untuk Memulai</h2>
-        <p class="text-slate-400 text-sm max-w-xs mb-6">Mengaktifkan sistem suara panggilan otomatis & kamera pemindai QR Code pada perangkat ini.</p>
-        <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg flex items-center gap-2 transition">
-            <i class="fa-solid fa-play"></i> Aktifkan Suara & Kamera
+        <h2 class="text-2xl font-extrabold text-white mb-2">Mode Kiosk Absensi</h2>
+        <p class="text-slate-400 text-sm max-w-xs mb-6">Sentuh tombol di bawah untuk mengaktifkan suara panggilan otomatis, kamera QR, dan layar penuh (Fullscreen).</p>
+        <button class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center gap-2.5 transition">
+            <i class="fa-solid fa-volume-high"></i> Aktifkan Suara & Layar Penuh
         </button>
     </div>
 
-    <!-- Input tersembunyi untuk RFID / Barcode Scanner Fisik (inputmode="none" agar keyboard tablet tidak muncul) -->
+    <!-- Input tersembunyi untuk RFID / Barcode Scanner Fisik -->
     <input type="text" id="rfidFocusInput" inputmode="none" autocomplete="off" style="position: absolute; opacity: 0; pointer-events: none;">
 
     <!-- Frame Aplikasi Vertikal (Potret) -->
-    <main class="w-full max-w-[420px] min-h-screen sm:min-h-[880px] sm:max-h-[95vh] bg-slate-900 sm:rounded-[2.5rem] sm:border-[6px] sm:border-slate-800 shadow-2xl flex flex-col justify-between p-5 relative overflow-hidden">
+    <main class="w-full max-w-[440px] h-screen sm:h-[92vh] sm:max-h-[900px] bg-slate-900 sm:rounded-[2.5rem] sm:border-[6px] sm:border-slate-800 shadow-2xl flex flex-col justify-between p-5 relative overflow-hidden">
         
         <!-- Bagian Atas: Header & Jam -->
         <header class="text-center mt-1">
@@ -67,6 +74,10 @@
                 <!-- Tombol Ganti Kamera -->
                 <button onclick="gantiKamera()" title="Ganti Kamera" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center border border-slate-700 transition">
                     <i class="fa-solid fa-camera-rotate text-sm"></i>
+                </button>
+                <!-- Tombol Toggle Fullscreen Manual -->
+                <button onclick="toggleFullscreenManual()" title="Layar Penuh (Fullscreen)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 flex items-center justify-center border border-slate-700 transition">
+                    <i id="fullscreenIcon" class="fa-solid fa-expand text-sm"></i>
                 </button>
             </div>
         </header>
@@ -134,13 +145,59 @@
         updateClock();
 
         // =========================================================================
+        // FITUR FULLSCREEN KIOSK OTOMATIS & MANUAL
+        // =========================================================================
+        function masukFullscreen() {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(() => {});
+                } else if (elem.webkitRequestFullscreen) { // Safari / iPadOS
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            }
+        }
+
+        function keluarFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+
+        function toggleFullscreenManual() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                masukFullscreen();
+            } else {
+                keluarFullscreen();
+            }
+        }
+
+        // Update ikon tombol saat status fullscreen berubah
+        function updateFullscreenIcon() {
+            const icon = document.getElementById('fullscreenIcon');
+            if (!icon) return;
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                icon.className = "fa-solid fa-compress text-sm";
+            } else {
+                icon.className = "fa-solid fa-expand text-sm";
+            }
+        }
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+
+        // =========================================================================
         // SISTEM AUDIO & SUARA KHUSUS TABLET / MOBILE (ANTI-BLOKIR AUTOPLAY)
         // =========================================================================
         let globalAudioCtx = null;
         let suaraIndoTerpilih = null;
         let daftarSuara = [];
 
-        // Muat daftar suara Bahasa Indonesia saat tersedia di Tablet
         function muatSuaraBahasaIndonesia() {
             if (!('speechSynthesis' in window)) return;
             daftarSuara = window.speechSynthesis.getVoices();
@@ -157,15 +214,19 @@
             window.speechSynthesis.onvoiceschanged = muatSuaraBahasaIndonesia;
         }
 
-        // Fungsi Unlock Audio saat layar pertama kali disentuh di Tablet
-        function aktifkanAudioTablet() {
+        // Fungsi Utama saat Overlay disentuh: Masuk Fullscreen + Unlock Audio
+        function aktifkanKioskTablet() {
+            // 1. Aktifkan Fullscreen Otomatis
+            masukFullscreen();
+
+            // 2. Sembunyikan Overlay
             const overlay = document.getElementById('audioUnlockOverlay');
-            if (overlay) {
+            if (overlay && !overlay.classList.contains('hidden')) {
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.classList.add('hidden'), 300);
             }
 
-            // 1. Inisialisasi & Resume Global AudioContext
+            // 3. Inisialisasi & Resume Global AudioContext
             try {
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
                 if (!globalAudioCtx) {
@@ -178,14 +239,16 @@
                 console.warn("AudioContext error:", e);
             }
 
-            // 2. Bunyikan Beep & Pancing SpeechSynthesis dengan kalimat pendek
+            // 4. Bunyikan Beep & Pancing SpeechSynthesis
             playBeep(false);
             muatSuaraBahasaIndonesia();
             ucapkanSuara("", "Sistem absensi aktif");
         }
 
         function tesSuaraManual() {
-            aktifkanAudioTablet();
+            playBeep(false);
+            muatSuaraBahasaIndonesia();
+            ucapkanSuara("", "Tes suara sistem absensi berhasil");
         }
 
         function playBeep(isError = false) {
@@ -213,18 +276,14 @@
             }
         }
 
-        // Fungsi Text-to-Speech yang kompatibel dengan Tablet Android & iPad
         function ucapkanSuara(namaSiswa, pesan) {
             const teksLengkap = namaSiswa ? `${namaSiswa.toLowerCase()}, ${pesan}` : pesan;
 
             if ('speechSynthesis' in window) {
                 try {
-                    // Di Android/Tablet, resume() terlebih dahulu jika ter-pause oleh sistem
                     if (window.speechSynthesis.paused) {
                         window.speechSynthesis.resume();
                     }
-
-                    // Hanya cancel jika sedang berbicara, beri sedikit jeda 50ms agar tidak bug di Chrome Android
                     if (window.speechSynthesis.speaking) {
                         window.speechSynthesis.cancel();
                     }
@@ -242,7 +301,6 @@
                             utterance.voice = suaraIndoTerpilih;
                         }
 
-                        // Jika gagal diucapkan oleh TTS bawaan tablet, gunakan fallback audio online
                         utterance.onerror = () => {
                             putarFallbackTTSOnline(teksLengkap);
                         };
@@ -257,7 +315,6 @@
             }
         }
 
-        // Fallback apabila Tablet tidak memiliki engine Google Text-to-Speech terinstal
         function putarFallbackTTSOnline(teks) {
             try {
                 const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=${encodeURIComponent(teks)}`;
