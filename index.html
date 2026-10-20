@@ -30,8 +30,20 @@
 </head>
 <body class="flex items-center justify-center min-h-screen text-slate-200 p-0 sm:p-4">
 
-    <!-- Input tersembunyi untuk RFID / Barcode Scanner Fisik -->
-    <input type="text" id="rfidFocusInput" autocomplete="off" style="position: absolute; opacity: 0; pointer-events: none;">
+    <!-- OVERLAY UNLOCK AUDIO KHUSUS TABLET / MOBILE -->
+    <div id="audioUnlockOverlay" onclick="aktifkanAudioTablet()" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-opacity duration-300">
+        <div class="w-20 h-20 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-2xl shadow-indigo-500/40 mb-5 animate-bounce">
+            <i class="fa-solid fa-volume-high text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-extrabold text-white mb-2">Sentuh Layar untuk Memulai</h2>
+        <p class="text-slate-400 text-sm max-w-xs mb-6">Mengaktifkan sistem suara panggilan otomatis & kamera pemindai QR Code pada perangkat ini.</p>
+        <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg flex items-center gap-2 transition">
+            <i class="fa-solid fa-play"></i> Aktifkan Suara & Kamera
+        </button>
+    </div>
+
+    <!-- Input tersembunyi untuk RFID / Barcode Scanner Fisik (inputmode="none" agar keyboard tablet tidak muncul) -->
+    <input type="text" id="rfidFocusInput" inputmode="none" autocomplete="off" style="position: absolute; opacity: 0; pointer-events: none;">
 
     <!-- Frame Aplikasi Vertikal (Potret) -->
     <main class="w-full max-w-[420px] min-h-screen sm:min-h-[880px] sm:max-h-[95vh] bg-slate-900 sm:rounded-[2.5rem] sm:border-[6px] sm:border-slate-800 shadow-2xl flex flex-col justify-between p-5 relative overflow-hidden">
@@ -48,6 +60,11 @@
                 <div id="clockWidget" class="text-xl font-bold text-indigo-400 bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700/60 shadow-inner tracking-wider">
                     --:--:--
                 </div>
+                <!-- Tombol Tes Suara -->
+                <button onclick="tesSuaraManual()" title="Tes Suara Tablet" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 flex items-center justify-center border border-slate-700 transition">
+                    <i id="speakerIcon" class="fa-solid fa-volume-high text-sm"></i>
+                </button>
+                <!-- Tombol Ganti Kamera -->
                 <button onclick="gantiKamera()" title="Ganti Kamera" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center border border-slate-700 transition">
                     <i class="fa-solid fa-camera-rotate text-sm"></i>
                 </button>
@@ -116,32 +133,137 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        function playBeep(isError = false) {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.type = 'sine';
-                oscillator.frequency.value = isError ? 300 : 950; 
-                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12); 
-                oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.12);
-            } catch (e) {}
+        // =========================================================================
+        // SISTEM AUDIO & SUARA KHUSUS TABLET / MOBILE (ANTI-BLOKIR AUTOPLAY)
+        // =========================================================================
+        let globalAudioCtx = null;
+        let suaraIndoTerpilih = null;
+        let daftarSuara = [];
+
+        // Muat daftar suara Bahasa Indonesia saat tersedia di Tablet
+        function muatSuaraBahasaIndonesia() {
+            if (!('speechSynthesis' in window)) return;
+            daftarSuara = window.speechSynthesis.getVoices();
+            if (daftarSuara.length > 0) {
+                suaraIndoTerpilih = daftarSuara.find(v => v.lang.replace('_', '-').toLowerCase().includes('id-id')) ||
+                                    daftarSuara.find(v => v.lang.toLowerCase().includes('id')) ||
+                                    daftarSuara.find(v => v.name.toLowerCase().includes('indonesia')) ||
+                                    null;
+            }
         }
 
-        // Menggunakan Nama Lengkap secara utuh
-        function ucapkanSuara(namaSiswa, pesan) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                let teksLengkap = namaSiswa ? (namaSiswa.toLowerCase() + ", " + pesan) : pesan;
-                let utterance = new SpeechSynthesisUtterance(teksLengkap);
-                utterance.lang = 'id-ID'; 
-                utterance.rate = 1.05; 
-                window.speechSynthesis.speak(utterance);
+        if ('speechSynthesis' in window) {
+            muatSuaraBahasaIndonesia();
+            window.speechSynthesis.onvoiceschanged = muatSuaraBahasaIndonesia;
+        }
+
+        // Fungsi Unlock Audio saat layar pertama kali disentuh di Tablet
+        function aktifkanAudioTablet() {
+            const overlay = document.getElementById('audioUnlockOverlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.classList.add('hidden'), 300);
             }
+
+            // 1. Inisialisasi & Resume Global AudioContext
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!globalAudioCtx) {
+                    globalAudioCtx = new AudioContextClass();
+                }
+                if (globalAudioCtx.state === 'suspended') {
+                    globalAudioCtx.resume();
+                }
+            } catch (e) {
+                console.warn("AudioContext error:", e);
+            }
+
+            // 2. Bunyikan Beep & Pancing SpeechSynthesis dengan kalimat pendek
+            playBeep(false);
+            muatSuaraBahasaIndonesia();
+            ucapkanSuara("", "Sistem absensi aktif");
+        }
+
+        function tesSuaraManual() {
+            aktifkanAudioTablet();
+        }
+
+        function playBeep(isError = false) {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!globalAudioCtx) {
+                    globalAudioCtx = new AudioContextClass();
+                }
+                if (globalAudioCtx.state === 'suspended') {
+                    globalAudioCtx.resume();
+                }
+
+                const oscillator = globalAudioCtx.createOscillator();
+                const gainNode = globalAudioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(globalAudioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.value = isError ? 300 : 950; 
+                gainNode.gain.setValueAtTime(0.5, globalAudioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + 0.15); 
+                oscillator.start(globalAudioCtx.currentTime);
+                oscillator.stop(globalAudioCtx.currentTime + 0.15);
+            } catch (e) {
+                console.warn("Gagal memutar beep:", e);
+            }
+        }
+
+        // Fungsi Text-to-Speech yang kompatibel dengan Tablet Android & iPad
+        function ucapkanSuara(namaSiswa, pesan) {
+            const teksLengkap = namaSiswa ? `${namaSiswa.toLowerCase()}, ${pesan}` : pesan;
+
+            if ('speechSynthesis' in window) {
+                try {
+                    // Di Android/Tablet, resume() terlebih dahulu jika ter-pause oleh sistem
+                    if (window.speechSynthesis.paused) {
+                        window.speechSynthesis.resume();
+                    }
+
+                    // Hanya cancel jika sedang berbicara, beri sedikit jeda 50ms agar tidak bug di Chrome Android
+                    if (window.speechSynthesis.speaking) {
+                        window.speechSynthesis.cancel();
+                    }
+
+                    setTimeout(() => {
+                        if (!suaraIndoTerpilih) muatSuaraBahasaIndonesia();
+
+                        const utterance = new SpeechSynthesisUtterance(teksLengkap);
+                        utterance.lang = 'id-ID';
+                        utterance.rate = 1.02;
+                        utterance.pitch = 1.0;
+                        utterance.volume = 1.0;
+
+                        if (suaraIndoTerpilih) {
+                            utterance.voice = suaraIndoTerpilih;
+                        }
+
+                        // Jika gagal diucapkan oleh TTS bawaan tablet, gunakan fallback audio online
+                        utterance.onerror = () => {
+                            putarFallbackTTSOnline(teksLengkap);
+                        };
+
+                        window.speechSynthesis.speak(utterance);
+                    }, 60);
+                } catch (err) {
+                    putarFallbackTTSOnline(teksLengkap);
+                }
+            } else {
+                putarFallbackTTSOnline(teksLengkap);
+            }
+        }
+
+        // Fallback apabila Tablet tidak memiliki engine Google Text-to-Speech terinstal
+        function putarFallbackTTSOnline(teks) {
+            try {
+                const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=${encodeURIComponent(teks)}`;
+                const audio = new Audio(url);
+                audio.play().catch(() => {});
+            } catch (e) {}
         }
 
         const statusCard = document.getElementById('statusCard');
@@ -255,7 +377,7 @@
         }
 
         const scanInput = document.getElementById('rfidFocusInput');
-        function jagaFokusInput() { scanInput.focus(); }
+        function jagaFokusInput() { scanInput.focus({ preventScroll: true }); }
         window.addEventListener('load', jagaFokusInput);
         document.addEventListener('click', jagaFokusInput);
         setInterval(jagaFokusInput, 1500);
