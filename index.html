@@ -2,8 +2,23 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Portal Absensi Sekolah</title>
+
+    <!-- KONFIGURASI META TAG PWA (ANDROID & IPADOS KIOSK TANPA ADDRESS BAR) -->
+    <meta name="theme-color" content="#090e1a">
+    <meta name="background-color" content="#090e1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EduAbsen">
+    <meta name="application-name" content="EduAbsen">
+
+    <!-- Link Manifest & Ikon Aplikasi (Diisi otomatis via Script di bawah agar tetap 1 file HTML) -->
+    <link rel="manifest" id="pwaManifestLink">
+    <link rel="icon" type="image/svg+xml" id="pwaFavicon">
+    <link rel="apple-touch-icon" id="pwaAppleIcon">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -16,6 +31,7 @@
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
         } 
         #reader { width: 100% !important; height: 100% !important; border: none !important; }
         #reader video { 
@@ -28,10 +44,19 @@
         #reader__scan_region { width: 100% !important; height: 100% !important; }
         #reader__dashboard { display: none !important; }
 
-        /* Penyesuaian tampilan bersih saat Fullscreen Kiosk aktif */
+        /* Penyesuaian tampilan bersih saat Fullscreen / Standalone PWA aktif */
         :fullscreen main, :-webkit-full-screen main {
             max-height: 100vh !important;
             height: 100vh !important;
+        }
+        @media all and (display-mode: fullscreen), all and (display-mode: standalone) {
+            main {
+                max-height: 100vh !important;
+                height: 100vh !important;
+                border: none !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+            }
         }
     </style>
 </head>
@@ -63,7 +88,7 @@
             <h1 class="text-2xl font-extrabold text-white tracking-tight">Portal Absensi</h1>
             <p class="text-slate-400 text-xs mt-0.5">Arahkan QR Code Kartu Pelajar ke Kamera</p>
             
-            <div class="flex items-center justify-center gap-2 mt-3">
+            <div class="flex items-center justify-center flex-wrap gap-2 mt-3">
                 <div id="clockWidget" class="text-xl font-bold text-indigo-400 bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700/60 shadow-inner tracking-wider">
                     --:--:--
                 </div>
@@ -78,6 +103,10 @@
                 <!-- Tombol Toggle Fullscreen Manual -->
                 <button onclick="toggleFullscreenManual()" title="Layar Penuh (Fullscreen)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 flex items-center justify-center border border-slate-700 transition">
                     <i id="fullscreenIcon" class="fa-solid fa-expand text-sm"></i>
+                </button>
+                <!-- Tombol Install PWA (Muncul otomatis jika browser mendukung instalasi) -->
+                <button id="btnInstallPWA" onclick="installPWA()" title="Install ke Layar Utama Tablet" class="hidden px-3 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold items-center justify-center gap-1.5 shadow-md transition">
+                    <i class="fa-solid fa-download"></i> <span>Install App</span>
                 </button>
             </div>
         </header>
@@ -138,6 +167,85 @@
 
         localStorage.clear();
 
+        // =========================================================================
+        // 1. GENERATOR WEB APP MANIFEST (PWA) & IKON OTOMATIS (SINGLE-FILE)
+        // =========================================================================
+        let deferredInstallPrompt = null;
+
+        function setupSingleFilePWA() {
+            // Membuat ikon SVG EduAbsen resolusi 512x512 secara dinamis
+            const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <defs>
+                    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#4f46e5"/>
+                        <stop offset="100%" stop-color="#0ea5e9"/>
+                    </linearGradient>
+                </defs>
+                <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+                <rect x="106" y="106" width="120" height="120" rx="24" fill="none" stroke="#ffffff" stroke-width="28"/>
+                <rect x="146" y="146" width="40" height="40" rx="8" fill="#ffffff"/>
+                <rect x="286" y="106" width="120" height="120" rx="24" fill="none" stroke="#ffffff" stroke-width="28"/>
+                <rect x="326" y="146" width="40" height="40" rx="8" fill="#ffffff"/>
+                <rect x="106" y="286" width="120" height="120" rx="24" fill="none" stroke="#ffffff" stroke-width="28"/>
+                <rect x="146" y="326" width="40" height="40" rx="8" fill="#ffffff"/>
+                <rect x="286" y="286" width="50" height="50" rx="10" fill="#ffffff"/>
+                <rect x="356" y="356" width="50" height="50" rx="10" fill="#ffffff"/>
+                <rect x="356" y="286" width="50" height="35" rx="8" fill="#ffffff"/>
+                <rect x="286" y="356" width="35" height="50" rx="8" fill="#ffffff"/>
+            </svg>`;
+
+            const iconDataUrl = "data:image/svg+xml;utf8," + encodeURIComponent(svgIcon);
+            document.getElementById('pwaFavicon').href = iconDataUrl;
+            document.getElementById('pwaAppleIcon').href = iconDataUrl;
+
+            // Konfigurasi Manifest PWA dengan mode "fullscreen" (tanpa address bar)
+            const manifestObj = {
+                name: "Portal Absensi QR Sekolah",
+                short_name: "EduAbsen",
+                description: "Aplikasi Kiosk Pemindai QR Code Absensi Siswa",
+                start_url: window.location.href,
+                display: "fullscreen",
+                orientation: "portrait",
+                background_color: "#090e1a",
+                theme_color: "#090e1a",
+                icons: [
+                    {
+                        src: iconDataUrl,
+                        sizes: "192x192 512x512",
+                        type: "image/svg+xml",
+                        purpose: "any maskable"
+                    }
+                ]
+            };
+
+            const manifestString = JSON.stringify(manifestObj);
+            const manifestBlob = new Blob([manifestString], { type: 'application/manifest+json' });
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            document.getElementById('pwaManifestLink').href = manifestUrl;
+        }
+        setupSingleFilePWA();
+
+        // Tangkap event instalasi PWA pada Chrome Android / Desktop
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const btnInstall = document.getElementById('btnInstallPWA');
+            if (btnInstall) {
+                btnInstall.classList.remove('hidden');
+                btnInstall.classList.add('flex');
+            }
+        });
+
+        async function installPWA() {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            const { outcome } = await deferredInstallPrompt.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('btnInstallPWA').classList.add('hidden');
+            }
+            deferredInstallPrompt = null;
+        }
+
         function updateClock() {
             document.getElementById('clockWidget').innerText = new Date().toLocaleTimeString('id-ID');
         }
@@ -145,14 +253,14 @@
         updateClock();
 
         // =========================================================================
-        // FITUR FULLSCREEN KIOSK OTOMATIS & MANUAL
+        // 2. FITUR FULLSCREEN KIOSK OTOMATIS & MANUAL
         // =========================================================================
         function masukFullscreen() {
             const elem = document.documentElement;
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 if (elem.requestFullscreen) {
                     elem.requestFullscreen().catch(() => {});
-                } else if (elem.webkitRequestFullscreen) { // Safari / iPadOS
+                } else if (elem.webkitRequestFullscreen) {
                     elem.webkitRequestFullscreen();
                 } else if (elem.msRequestFullscreen) {
                     elem.msRequestFullscreen();
@@ -178,7 +286,6 @@
             }
         }
 
-        // Update ikon tombol saat status fullscreen berubah
         function updateFullscreenIcon() {
             const icon = document.getElementById('fullscreenIcon');
             if (!icon) return;
@@ -192,7 +299,7 @@
         document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
 
         // =========================================================================
-        // SISTEM AUDIO & SUARA KHUSUS TABLET / MOBILE (ANTI-BLOKIR AUTOPLAY)
+        // 3. SISTEM AUDIO & SUARA KHUSUS TABLET / MOBILE (ANTI-BLOKIR AUTOPLAY)
         // =========================================================================
         let globalAudioCtx = null;
         let suaraIndoTerpilih = null;
@@ -214,19 +321,15 @@
             window.speechSynthesis.onvoiceschanged = muatSuaraBahasaIndonesia;
         }
 
-        // Fungsi Utama saat Overlay disentuh: Masuk Fullscreen + Unlock Audio
         function aktifkanKioskTablet() {
-            // 1. Aktifkan Fullscreen Otomatis
             masukFullscreen();
 
-            // 2. Sembunyikan Overlay
             const overlay = document.getElementById('audioUnlockOverlay');
             if (overlay && !overlay.classList.contains('hidden')) {
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.classList.add('hidden'), 300);
             }
 
-            // 3. Inisialisasi & Resume Global AudioContext
             try {
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
                 if (!globalAudioCtx) {
@@ -239,7 +342,6 @@
                 console.warn("AudioContext error:", e);
             }
 
-            // 4. Bunyikan Beep & Pancing SpeechSynthesis
             playBeep(false);
             muatSuaraBahasaIndonesia();
             ucapkanSuara("", "Sistem absensi aktif");
@@ -323,6 +425,9 @@
             } catch (e) {}
         }
 
+        // =========================================================================
+        // 4. LOGIKA PEMINDAIAN QR & PENGIRIMAN DATA ABSENSI
+        // =========================================================================
         const statusCard = document.getElementById('statusCard');
         const statusIconBox = document.getElementById('statusIconBox');
         const statusIcon = document.getElementById('statusIcon');
