@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Satui Presensi SMPN 1 Satui</title>
+    <title>Admin Portal - EduAbsen SMPN 1 Satui</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -43,6 +43,16 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Animasi Getar saat Login Gagal */
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shakeError 0.4s ease-in-out;
+        }
+
         /* Sticky Column untuk Tabel Rekap */
         .sticky-col-nama {
             position: sticky;
@@ -52,7 +62,7 @@
         }
 
         @media print {
-            aside, header, #sidebarOverlay, #actionButtonsWrapper, #manualAddModal, #manualAddGuruModal, #qrPreviewModal, #toastContainer, .no-print, .action-tools { display: none !important; }
+            aside, header, #loginScreen, #sidebarOverlay, #actionButtonsWrapper, #manualAddModal, #manualAddGuruModal, #qrPreviewModal, #toastContainer, .no-print, .action-tools { display: none !important; }
             main { padding: 0 !important; margin: 0 !important; background: white !important; }
             .shadow-sm { box-shadow: none !important; }
         }
@@ -62,6 +72,124 @@
 </head>
 <body class="bg-slate-50/80 flex h-screen overflow-hidden text-slate-800 antialiased selection:bg-indigo-600 selection:text-white">
     
+    <!-- ========================================================= -->
+    <!-- LAYAR LOGIN MODERN & PROFESIONAL                          -->
+    <!-- ========================================================= -->
+    <div id="loginScreen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 p-4 overflow-y-auto transition-all duration-500">
+        <!-- Dekorasi Cahaya Latar Belakang -->
+        <div class="fixed inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/25 rounded-full blur-3xl"></div>
+            <div class="absolute top-1/2 -right-32 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
+        </div>
+
+        <!-- Kartu Utama Login (Split Layout) -->
+        <div id="loginCard" class="relative z-10 w-full max-w-4xl bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 transition-all duration-300">
+            
+            <!-- Panel Kiri: Branding & Informasi Sistem -->
+            <div class="lg:col-span-5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-900 p-8 md:p-10 text-white flex flex-col justify-between relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/15 mb-8">
+                        <div class="w-9 h-9 rounded-xl bg-white text-indigo-600 flex items-center justify-center font-extrabold text-lg shadow-md">
+                            <i class="fa-solid fa-qrcode"></i>
+                        </div>
+                        <div class="text-left">
+                            <span class="font-extrabold tracking-tight text-sm block leading-none">Satui Presensi/span>
+                            <span class="text-[10px] text-indigo-200 font-medium">Cloud Attendance System</span>
+                        </div>
+                    </div>
+
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight leading-snug">
+                        Portal Administrasi Presensi Digital
+                    </h1>
+                    <p class="text-indigo-100/85 text-xs md:text-sm mt-3 leading-relaxed">
+                        Sistem manajemen kehadiran siswa & dewan guru terintegrasi QR Code dan RFID untuk <strong>SMP Negeri 1 Satui</strong>.
+                    </p>
+                </div>
+
+                <div class="relative z-10 mt-8 pt-6 border-t border-white/15 space-y-3">
+                    <div class="flex items-center gap-3 text-xs text-indigo-100">
+                        <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-emerald-300"><i class="fa-solid fa-bolt"></i></span>
+                        <span>Sinkronisasi Real-Time Google Sheets</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-indigo-100">
+                        <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-amber-300"><i class="fa-solid fa-print"></i></span>
+                        <span>Cetak ID Card & Rekap Otomatis (Excel/PDF)</span>
+                    </div>
+                    <p class="text-[11px] text-indigo-200/60 pt-2">NPSN: 30303610 &bull; Tanah Bumbu, Kalimantan Selatan</p>
+                </div>
+
+                <!-- Ornamen Lingkaran -->
+                <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            </div>
+
+            <!-- Panel Kanan: Form Autentikasi -->
+            <div class="lg:col-span-7 p-8 md:p-10 lg:p-12 flex flex-col justify-center bg-slate-900/95 text-slate-200">
+                <div class="mb-7">
+                    <span class="text-[11px] font-bold uppercase tracking-widest text-indigo-400">Otorisasi Pengelola</span>
+                    <h2 class="text-2xl font-extrabold text-white mt-1">Selamat Datang Kembali</h2>
+                    <p class="text-xs text-slate-400 mt-1">Masukkan kredensial administrator untuk mengakses dashboard.</p>
+                </div>
+
+                <!-- Alert Box Pesan Error Login -->
+                <div id="loginErrorAlert" class="hidden mb-5 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-3">
+                    <i class="fa-solid fa-circle-exclamation text-rose-400 text-base"></i>
+                    <span id="loginErrorText">Username atau Password yang Anda masukkan salah!</span>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Username</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
+                                <i class="fa-solid fa-user-shield text-sm"></i>
+                            </span>
+                            <input type="text" id="loginUsername" required autocomplete="username" placeholder="Masukkan username admin" 
+                                class="w-full bg-slate-950/90 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
+                                <i class="fa-solid fa-key text-sm"></i>
+                            </span>
+                            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Masukkan kode sandi" 
+                                class="w-full bg-slate-950/90 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl pl-11 pr-12 py-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-all font-mono-code">
+                            <button type="button" onclick="toggleShowPassword()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors" title="Tampilkan / Sembunyikan Password">
+                                <i id="eyePasswordIcon" class="fa-regular fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                            <input type="checkbox" id="rememberSession" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500/30">
+                            <span class="text-xs font-medium text-slate-400">Ingat sesi di perangkat ini</span>
+                        </label>
+                        <span class="text-[11px] text-slate-500 font-mono-code">WITA (GMT+8)</span>
+                    </div>
+
+                    <button type="submit" id="btnSubmitLogin" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2.5 text-sm transition-all duration-200 transform active:scale-[0.99]">
+                        <span>Masuk ke Dashboard</span>
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    </button>
+                </form>
+
+                <!-- Indikator Preload Data di Bawah Login -->
+                <div class="mt-8 pt-5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+                    <span class="flex items-center gap-2">
+                        <span id="loginPreloadDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span id="loginPreloadStatus">Menyiapkan data di latar belakang...</span>
+                    </span>
+                    <span>v2.5 Enterprise</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
 
@@ -113,7 +241,7 @@
 
             <button onclick="switchTab('rekap')" id="nav-rekap" class="w-full flex items-center justify-between text-left py-3 px-4 rounded-xl hover:bg-slate-900 hover:text-white transition-all duration-200 text-slate-400 font-medium text-sm group">
                 <div class="flex items-center gap-3.5">
-                    <i class="fa-solid fa-file-Waveform fa-calendar-check w-5 text-center text-base group-hover:text-indigo-400 transition-colors"></i>
+                    <i class="fa-solid fa-calendar-check w-5 text-center text-base group-hover:text-indigo-400 transition-colors"></i>
                     <span>Rekap & Laporan</span>
                 </div>
             </button>
@@ -139,7 +267,7 @@
             </button>
         </nav>
         
-        <!-- Sidebar Footer Status -->
+        <!-- Sidebar Footer Status & Tombol Logout -->
         <div class="p-4 border-t border-slate-800/80 bg-slate-900/40">
             <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/90 border border-slate-800">
                 <div class="flex items-center gap-3">
@@ -154,6 +282,9 @@
                         <p id="syncStatusText" class="text-[11px] text-emerald-400 font-medium mt-0.5">Terhubung ke Cloud</p>
                     </div>
                 </div>
+                <button onclick="handleLogout()" title="Keluar / Kunci Sesi Admin" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-power-off text-xs"></i>
+                </button>
             </div>
         </div>
     </aside>
@@ -182,7 +313,7 @@
                     <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">WITA</span>
                 </div>
 
-                <!-- Tombol Simpan Antrean (Muncul saat ada penambahan data) -->
+                <!-- Tombol Simpan Antrean -->
                 <button onclick="simpanKeDatabase()" id="btnSave" class="hidden no-print flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/25 transition-all duration-200 font-bold text-xs md:text-sm animate-bounce">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                     <span>Simpan Antrean</span>
@@ -224,7 +355,6 @@
                             </button>
                         </div>
                     </div>
-                    <!-- Decorative background glow -->
                     <div class="absolute -right-10 -bottom-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 </div>
 
@@ -330,7 +460,6 @@
             <!-- ========================================================= -->
             <div id="tab-logabsen" class="hidden space-y-6 tab-animate">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-                    <!-- Filter Header -->
                     <div class="p-5 md:p-6 border-b border-slate-200/80 flex flex-col xl:flex-row justify-between items-start xl:items-center bg-slate-50/50 gap-4">
                         <div>
                             <h3 class="font-extrabold text-base md:text-lg text-slate-900 flex items-center gap-2.5">
@@ -362,7 +491,6 @@
                         </div>
                     </div>
 
-                    <!-- Table Log -->
                     <div class="overflow-x-auto w-full">
                         <table class="min-w-full leading-normal text-sm">
                             <thead>
@@ -387,7 +515,6 @@
             <!-- TAB 3: REKAP & UNDUH ABSENSI                              -->
             <!-- ========================================================= -->
             <div id="tab-rekap" class="hidden space-y-6 tab-animate">
-                <!-- Panel Kontrol Filter Rekap -->
                 <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-5">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4">
                         <div>
@@ -524,7 +651,6 @@
             <!-- ========================================================= -->
             <div id="tab-siswa" class="hidden space-y-6 tab-animate">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-                    <!-- Top Action Bar Siswa -->
                     <div class="p-5 md:p-6 border-b border-slate-200/80 flex flex-col gap-4 bg-slate-50/50 action-tools">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
@@ -547,7 +673,6 @@
                             </div>
                         </div>
 
-                        <!-- Filter & Cetak Bar Siswa -->
                         <div class="pt-3 border-t border-slate-200/60 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
                             <div class="flex flex-col sm:flex-row gap-2.5">
                                 <div class="relative w-full sm:w-64">
@@ -578,7 +703,6 @@
                         </div>
                     </div>
 
-                    <!-- Table Siswa -->
                     <div class="overflow-x-auto w-full">
                         <table class="min-w-full leading-normal text-sm" id="tabelSiswaUtama">
                             <thead>
@@ -603,7 +727,6 @@
             <!-- ========================================================= -->
             <div id="tab-guru" class="hidden space-y-6 tab-animate">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-                    <!-- Top Action Bar Guru -->
                     <div class="p-5 md:p-6 border-b border-slate-200/80 flex flex-col gap-4 bg-slate-50/50 action-tools">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
@@ -626,7 +749,6 @@
                             </div>
                         </div>
 
-                        <!-- Filter & Cetak Bar Guru -->
                         <div class="pt-3 border-t border-slate-200/60 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
                             <div class="relative w-full lg:w-72">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -649,7 +771,6 @@
                         </div>
                     </div>
 
-                    <!-- Table Guru -->
                     <div class="overflow-x-auto w-full">
                         <table class="min-w-full leading-normal text-sm" id="tabelGuruUtama">
                             <thead>
@@ -764,9 +885,15 @@
             <p id="previewQrId" class="font-mono-code text-xs text-slate-500 mt-1">-</p>
         </div>
     </div>
-<script>
+
+    <script>
         const URL_WEB_APP = 'https://script.google.com/macros/s/AKfycbzKVk3apqIkVMzvD4bTqZ7OCRLCLuPt4dg3h5Nfyx6v9DUMnECNTgB-i3ClIcsfKCw_mQ/exec'; 
         const CACHE_KEY = 'eduabsen_admin_cache_v1';
+        const AUTH_SESSION_KEY = 'eduabsen_auth_session_v1';
+
+        // Kredensial Resmi Administrator
+        const ADMIN_USER = 'admin';
+        const ADMIN_PASS = '30303610';
 
         let globalSiswaList = []; 
         let globalGuruList = [];
@@ -778,7 +905,6 @@
         let daftarKelasUnik = new Set();
         let chartInstance = null;
 
-        // Penanda agar QR tidak digambar berulang-ulang jika data tidak berubah
         let qrSiswaRendered = false;
         let qrGuruRendered = false;
         let activeTabId = 'dashboard';
@@ -797,6 +923,71 @@
         const NAMA_BULAN_PENDEK = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         const NAMA_HARI_PENDEK = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
+        // =========================================================================
+        // SISTEM AUTENTIKASI LOGIN & SESSION
+        // =========================================================================
+        function cekSesiLogin() {
+            const isLogged = localStorage.getItem(AUTH_SESSION_KEY) === 'authenticated' || sessionStorage.getItem(AUTH_SESSION_KEY) === 'authenticated';
+            const loginScreen = document.getElementById('loginScreen');
+            if (isLogged && loginScreen) {
+                loginScreen.classList.add('hidden');
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const userInp = document.getElementById('loginUsername').value.trim();
+            const passInp = document.getElementById('loginPassword').value.trim();
+            const remember = document.getElementById('rememberSession').checked;
+            const errorAlert = document.getElementById('loginErrorAlert');
+            const loginCard = document.getElementById('loginCard');
+
+            if (userInp.toLowerCase() === ADMIN_USER && passInp === ADMIN_PASS) {
+                errorAlert.classList.add('hidden');
+                if (remember) {
+                    localStorage.setItem(AUTH_SESSION_KEY, 'authenticated');
+                } else {
+                    sessionStorage.setItem(AUTH_SESSION_KEY, 'authenticated');
+                }
+
+                const loginScreen = document.getElementById('loginScreen');
+                loginScreen.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    loginScreen.classList.add('hidden');
+                    loginScreen.classList.remove('opacity-0', 'pointer-events-none');
+                }, 400);
+
+                showToast('Selamat datang kembali, Administrator!', 'success');
+            } else {
+                errorAlert.classList.remove('hidden');
+                loginCard.classList.remove('animate-shake');
+                void loginCard.offsetWidth; // Trigger reflow untuk mengulang animasi shake
+                loginCard.classList.add('animate-shake');
+                document.getElementById('loginPassword').select();
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem(AUTH_SESSION_KEY);
+            sessionStorage.removeItem(AUTH_SESSION_KEY);
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginErrorAlert').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            showToast('Anda telah keluar dari sesi Administrator.', 'info');
+        }
+
+        function toggleShowPassword() {
+            const passInput = document.getElementById('loginPassword');
+            const eyeIcon = document.getElementById('eyePasswordIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.className = 'fa-regular fa-eye-slash text-sm text-indigo-400';
+            } else {
+                passInput.type = 'password';
+                eyeIcon.className = 'fa-regular fa-eye text-sm';
+            }
+        }
+
         function updateClockAndDate() {
             const now = new Date();
             const clockEl = document.getElementById('clockWidget');
@@ -810,6 +1001,7 @@
         setInterval(updateClockAndDate, 1000);
 
         document.addEventListener("DOMContentLoaded", () => {
+            cekSesiLogin();
             updateClockAndDate();
             inisialisasiFilterDefaultRekap();
             initChart();
@@ -842,6 +1034,8 @@
                         syncText.innerText = 'Cache Instan (Menyinkronkan...)';
                         syncText.className = 'text-[11px] text-sky-400 font-medium mt-0.5';
                     }
+                    const preloadStatus = document.getElementById('loginPreloadStatus');
+                    if (preloadStatus) preloadStatus.innerText = 'Cache lokal siap • Menyinkronkan cloud...';
                 }
             } catch (e) {
                 console.warn('Gagal membaca cache lokal:', e);
@@ -995,7 +1189,6 @@
                     masterDataGuru = data.guru || [];
                     masterDataAbsen = data.absen || [];
 
-                    // Simpan ke localStorage agar pembukaan berikutnya instan (0.1 detik)
                     try {
                         localStorage.setItem(CACHE_KEY, JSON.stringify({
                             siswa: masterDataSiswa,
@@ -1014,7 +1207,6 @@
                     renderLogAbsen(masterDataAbsen); 
                     prosesRekapAbsensi();
 
-                    // Hanya render tabel Siswa/Guru jika user memang sedang membuka tab tersebut
                     if (activeTabId === 'siswa') {
                         renderTableSiswa(masterDataSiswa);
                         qrSiswaRendered = true;
@@ -1027,6 +1219,10 @@
                         syncText.innerText = 'Data Terkini (Online)';
                         syncText.className = 'text-[11px] text-emerald-400 font-medium mt-0.5';
                     }
+                    const preloadDot = document.getElementById('loginPreloadDot');
+                    const preloadStatus = document.getElementById('loginPreloadStatus');
+                    if (preloadDot) preloadDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                    if (preloadStatus) preloadStatus.innerText = `Database siap (${totalSiswaDatabase} Siswa, ${totalGuruDatabase} Guru)`;
                 }
             })
             .catch(err => {
@@ -1093,9 +1289,6 @@
             if (statKelas) statKelas.innerHTML = `${daftarKelasUnik.size} <span class="text-xs font-medium text-slate-400">Kelas</span>`;
         }
 
-        // =========================================================================
-        // RENDER LOG ABSEN (DENGAN DOCUMENT FRAGMENT AGAR RINGAN)
-        // =========================================================================
         function renderLogAbsen(dataAbsen) {
             const tbody = document.getElementById('logTableBody'); 
             tbody.innerHTML = '';
@@ -1112,7 +1305,6 @@
             }
             
             const fragment = document.createDocumentFragment();
-            // Tampilkan maksimal 300 baris terbaru di DOM awal agar tidak membebani memori
             const limit = Math.max(1, dataAbsen.length - 300);
             for(let i = dataAbsen.length - 1; i >= limit; i--) { 
                 if(!dataAbsen[i][0]) continue; 
@@ -1208,9 +1400,6 @@
             showToast('File Excel Log Kehadiran berhasil diunduh.', 'success');
         }
 
-        // =========================================================================
-        // LAZY RENDER QR CODE (AGAR BROWSER TIDAK PERNAH MACET)
-        // =========================================================================
         function renderSingleQR(wrapper) {
             if (!wrapper || wrapper.querySelector('canvas')) return;
             const qrData = wrapper.getAttribute('data-qr');
@@ -1244,9 +1433,6 @@
             });
         }, { rootMargin: '150px' });
 
-        // =========================================================================
-        // MANAJEMEN DATA GURU & QR CODE
-        // =========================================================================
         function renderTableGuru(dataGuru) {
             const tbody = document.getElementById('guruTableBody'); 
             tbody.innerHTML = ''; 
@@ -1493,9 +1679,6 @@
             }
         }
 
-        // =========================================================================
-        // REKAPITULASI ABSENSI
-        // =========================================================================
         function ubahTargetRekap() {
             const target = document.getElementById('rekapTarget').value;
             const wrapperKelas = document.getElementById('wrapperRekapKelas');
@@ -1921,9 +2104,6 @@
             showToast('Dokumen PDF Rekapitulasi berhasil dicetak.', 'success');
         }
 
-        // =========================================================================
-        // MANAJEMEN DATA SISWA & QR CODE (LAZY LOADED)
-        // =========================================================================
         function renderTableSiswa(dataSiswa) {
             const tbody = document.getElementById('siswaTableBody'); 
             tbody.innerHTML = ''; 
@@ -2237,7 +2417,6 @@
             activeBtn.className = "w-full flex items-center justify-between text-left py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/25 font-semibold text-sm transition-all duration-200";
             document.getElementById('pageTitle').innerText = navConfig[tabId].title;
 
-            // Render tabel Siswa / Guru hanya saat tab-nya diklik pertama kali
             if (tabId === 'siswa' && !qrSiswaRendered && masterDataSiswa.length > 0) {
                 renderTableSiswa(masterDataSiswa);
                 qrSiswaRendered = true;
@@ -2329,5 +2508,5 @@
             }
         }
     </script>
-   </body>
+</body>
 </html>
