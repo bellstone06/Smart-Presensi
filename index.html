@@ -764,9 +764,10 @@
             <p id="previewQrId" class="font-mono-code text-xs text-slate-500 mt-1">-</p>
         </div>
     </div>
-
-    <script>
+<script>
         const URL_WEB_APP = 'https://script.google.com/macros/s/AKfycbzKVk3apqIkVMzvD4bTqZ7OCRLCLuPt4dg3h5Nfyx6v9DUMnECNTgB-i3ClIcsfKCw_mQ/exec'; 
+        const CACHE_KEY = 'eduabsen_admin_cache_v1';
+
         let globalSiswaList = []; 
         let globalGuruList = [];
         let totalSiswaDatabase = 0;
@@ -776,6 +777,11 @@
         let masterDataAbsen = [];
         let daftarKelasUnik = new Set();
         let chartInstance = null;
+
+        // Penanda agar QR tidak digambar berulang-ulang jika data tidak berubah
+        let qrSiswaRendered = false;
+        let qrGuruRendered = false;
+        let activeTabId = 'dashboard';
 
         let currentRekapResult = {
             judul: '',
@@ -791,7 +797,6 @@
         const NAMA_BULAN_PENDEK = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         const NAMA_HARI_PENDEK = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-        // Live Clock & Header Date
         function updateClockAndDate() {
             const now = new Date();
             const clockEl = document.getElementById('clockWidget');
@@ -808,12 +813,59 @@
             updateClockAndDate();
             inisialisasiFilterDefaultRekap();
             initChart();
-            loadDataFromDatabase();
+            
+            // 1. MUAT INSTAN DARI CACHE LOKAL (0.1 Detik)
+            muatDariCacheLokal();
+            
+            // 2. SINKRONISASI LATAR BELAKANG DARI SERVER GOOGLE SHEETS
+            loadDataFromDatabase(true);
         });
 
-        // =========================================================================
-        // SISTEM TOAST NOTIFICATION MODERN
-        // =========================================================================
+        function muatDariCacheLokal() {
+            try {
+                const rawCache = localStorage.getItem(CACHE_KEY);
+                if (!rawCache) return;
+                const cached = JSON.parse(rawCache);
+                if (cached && cached.siswa && cached.absen) {
+                    masterDataSiswa = cached.siswa || [];
+                    masterDataGuru = cached.guru || [];
+                    masterDataAbsen = cached.absen || [];
+                    
+                    hitungTotalPesertaCepat();
+                    ekstrakKelasUnik(masterDataSiswa);
+                    updateDashboardStats(masterDataAbsen);
+                    renderLogAbsen(masterDataAbsen);
+                    prosesRekapAbsensi();
+
+                    const syncText = document.getElementById('syncStatusText');
+                    if (syncText) {
+                        syncText.innerText = 'Cache Instan (Menyinkronkan...)';
+                        syncText.className = 'text-[11px] text-sky-400 font-medium mt-0.5';
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal membaca cache lokal:', e);
+            }
+        }
+
+        function hitungTotalPesertaCepat() {
+            let countS = 0;
+            for (let i = 1; i < masterDataSiswa.length; i++) {
+                if (masterDataSiswa[i] && (masterDataSiswa[i][0] || masterDataSiswa[i][1])) countS++;
+            }
+            totalSiswaDatabase = countS;
+            const badgeSiswa = document.getElementById('badgeCountSiswa');
+            if (badgeSiswa) badgeSiswa.innerText = totalSiswaDatabase;
+
+            let countG = 0;
+            for (let i = 1; i < masterDataGuru.length; i++) {
+                if (masterDataGuru[i] && (masterDataGuru[i][0] || masterDataGuru[i][1])) countG++;
+            }
+            totalGuruDatabase = countG;
+            const badgeGuru = document.getElementById('badgeCountGuru');
+            if (badgeGuru) badgeGuru.innerText = totalGuruDatabase;
+        }
+
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -833,16 +885,10 @@
 
             const toast = document.createElement('div');
             toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-2xl border shadow-xl backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
-            toast.innerHTML = `
-                ${icons[type] || icons.info}
-                <div class="text-xs font-semibold leading-relaxed flex-1">${message}</div>
-            `;
+            toast.innerHTML = `${icons[type] || icons.info}<div class="text-xs font-semibold leading-relaxed flex-1">${message}</div>`;
             container.appendChild(toast);
 
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            });
-
+            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
@@ -863,8 +909,11 @@
 
         function bukaPreviewQR(wrapperId, nama, idLabel, kategoriLabel) {
             const wrapper = document.getElementById(wrapperId);
+            if (wrapper && !wrapper.querySelector('canvas')) {
+                renderSingleQR(wrapper);
+            }
             const canvas = wrapper ? wrapper.querySelector('canvas') : null;
-            if (!canvas) return showToast('QR Code sedang dimuat...', 'warning');
+            if (!canvas) return showToast('QR Code sedang disiapkan...', 'warning');
 
             document.getElementById('previewQrImg').src = canvas.toDataURL('image/png');
             document.getElementById('previewQrNama').innerText = nama;
@@ -873,7 +922,7 @@
             document.getElementById('qrPreviewModal').classList.remove('hidden');
         }
 
-        function tutupPreviewQR(e) {
+        function tutupPreviewQR() {
             document.getElementById('qrPreviewModal').classList.add('hidden');
         }
 
@@ -916,38 +965,20 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#0f172a',
-                            padding: 12,
-                            cornerRadius: 10,
-                            titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: 'bold' },
-                            bodyFont: { family: 'Plus Jakarta Sans', size: 12 }
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: '#f1f5f9', borderDash: [5, 5] }, 
-                            border: { display: false },
-                            ticks: { font: { family: 'Plus Jakarta Sans', size: 11 } }
-                        },
-                        x: { 
-                            grid: { display: false }, 
-                            border: { display: false },
-                            ticks: { font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' } }
-                        }
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9', borderDash: [5, 5] }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
                     }
                 }
             });
         }
 
-        function loadDataFromDatabase() {
+        function loadDataFromDatabase(isSilent = false) {
             const refreshIcon = document.getElementById('refreshIcon');
             const syncText = document.getElementById('syncStatusText');
             if(refreshIcon) refreshIcon.classList.add('fa-spin');
-            if(syncText) {
+            if(syncText && !isSilent) {
                 syncText.innerText = 'Menyinkronkan data...';
                 syncText.className = 'text-[11px] text-amber-400 font-medium mt-0.5';
             }
@@ -963,12 +994,35 @@
                     masterDataSiswa = data.siswa || []; 
                     masterDataGuru = data.guru || [];
                     masterDataAbsen = data.absen || [];
+
+                    // Simpan ke localStorage agar pembukaan berikutnya instan (0.1 detik)
+                    try {
+                        localStorage.setItem(CACHE_KEY, JSON.stringify({
+                            siswa: masterDataSiswa,
+                            guru: masterDataGuru,
+                            absen: masterDataAbsen,
+                            timestamp: Date.now()
+                        }));
+                    } catch (e) {}
+
+                    qrSiswaRendered = false;
+                    qrGuruRendered = false;
+
+                    hitungTotalPesertaCepat();
                     ekstrakKelasUnik(masterDataSiswa);
-                    renderTableSiswa(masterDataSiswa);
-                    renderTableGuru(masterDataGuru);
-                    renderLogAbsen(masterDataAbsen); 
                     updateDashboardStats(masterDataAbsen);
+                    renderLogAbsen(masterDataAbsen); 
                     prosesRekapAbsensi();
+
+                    // Hanya render tabel Siswa/Guru jika user memang sedang membuka tab tersebut
+                    if (activeTabId === 'siswa') {
+                        renderTableSiswa(masterDataSiswa);
+                        qrSiswaRendered = true;
+                    } else if (activeTabId === 'guru') {
+                        renderTableGuru(masterDataGuru);
+                        qrGuruRendered = true;
+                    }
+
                     if(syncText) {
                         syncText.innerText = 'Data Terkini (Online)';
                         syncText.className = 'text-[11px] text-emerald-400 font-medium mt-0.5';
@@ -977,20 +1031,13 @@
             })
             .catch(err => {
                 console.error(err);
-                showToast('Gagal memuat data dari server Google Sheets.', 'error');
-                if(syncText) {
-                    syncText.innerText = 'Gangguan Koneksi';
-                    syncText.className = 'text-[11px] text-rose-400 font-medium mt-0.5';
-                }
+                if (!isSilent) showToast('Gagal memuat data terbaru dari server.', 'error');
             })
             .finally(() => {
                 if(refreshIcon) refreshIcon.classList.remove('fa-spin');
             });
         }
 
-        // =========================================================================
-        // PARSER TANGGAL & NORMALISASI ID
-        // =========================================================================
         function bersihkanID(val) {
             if (val === null || val === undefined) return '';
             return val.toString().trim().replace(/^'/, '').replace(/\.0+$/, '').trim();
@@ -999,39 +1046,20 @@
         function parseTanggalAbsen(rawVal) {
             if (!rawVal) return null;
             if (rawVal instanceof Date && !isNaN(rawVal.getTime())) return rawVal;
-
             const str = rawVal.toString().trim().replace(/^'/, '');
 
             const matchYMD = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:[\sT](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
             if (matchYMD) {
-                return new Date(
-                    parseInt(matchYMD[1], 10),
-                    parseInt(matchYMD[2], 10) - 1,
-                    parseInt(matchYMD[3], 10),
-                    parseInt(matchYMD[4] || '0', 10),
-                    parseInt(matchYMD[5] || '0', 10),
-                    parseInt(matchYMD[6] || '0', 10)
-                );
+                return new Date(parseInt(matchYMD[1], 10), parseInt(matchYMD[2], 10) - 1, parseInt(matchYMD[3], 10), parseInt(matchYMD[4] || '0', 10), parseInt(matchYMD[5] || '0', 10), parseInt(matchYMD[6] || '0', 10));
             }
 
             const matchDMY = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[\sT](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
             if (matchDMY) {
-                let p1 = parseInt(matchDMY[1], 10);
-                let p2 = parseInt(matchDMY[2], 10);
+                let p1 = parseInt(matchDMY[1], 10), p2 = parseInt(matchDMY[2], 10);
                 const year = parseInt(matchDMY[3], 10);
-
-                let day = p1;
-                let month = p2 - 1;
-
-                if (p2 > 12 && p1 <= 12) {
-                    day = p2;
-                    month = p1 - 1;
-                }
-
-                const hr = parseInt(matchDMY[4] || '0', 10);
-                const min = parseInt(matchDMY[5] || '0', 10);
-                const sec = parseInt(matchDMY[6] || '0', 10);
-                return new Date(year, month, day, hr, min, sec);
+                let day = p1, month = p2 - 1;
+                if (p2 > 12 && p1 <= 12) { day = p2; month = p1 - 1; }
+                return new Date(year, month, day, parseInt(matchDMY[4] || '0', 10), parseInt(matchDMY[5] || '0', 10), parseInt(matchDMY[6] || '0', 10));
             }
 
             const parsed = new Date(str);
@@ -1039,10 +1067,7 @@
         }
 
         function formatDateKey(dateObj) {
-            const y = dateObj.getFullYear();
-            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const d = String(dateObj.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
+            return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
         }
 
         function ekstrakKelasUnik(dataSiswa) {
@@ -1068,6 +1093,9 @@
             if (statKelas) statKelas.innerHTML = `${daftarKelasUnik.size} <span class="text-xs font-medium text-slate-400">Kelas</span>`;
         }
 
+        // =========================================================================
+        // RENDER LOG ABSEN (DENGAN DOCUMENT FRAGMENT AGAR RINGAN)
+        // =========================================================================
         function renderLogAbsen(dataAbsen) {
             const tbody = document.getElementById('logTableBody'); 
             tbody.innerHTML = '';
@@ -1082,10 +1110,15 @@
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-sm">Belum ada riwayat kehadiran tercatat</td></tr>`; 
                 return; 
             }
-            for(let i = dataAbsen.length - 1; i >= 1; i--) { 
+            
+            const fragment = document.createDocumentFragment();
+            // Tampilkan maksimal 300 baris terbaru di DOM awal agar tidak membebani memori
+            const limit = Math.max(1, dataAbsen.length - 300);
+            for(let i = dataAbsen.length - 1; i >= limit; i--) { 
                 if(!dataAbsen[i][0]) continue; 
-                tbody.appendChild(buatBarisLog(dataAbsen[i])); 
+                fragment.appendChild(buatBarisLog(dataAbsen[i])); 
             }
+            tbody.appendChild(fragment);
         }
         
         function buatBarisLog(row) {
@@ -1149,7 +1182,7 @@
 
         function downloadLogExcel() {
             const rows = Array.from(document.querySelectorAll('.baris-log')).filter(tr => tr.style.display !== 'none');
-            if (rows.length === 0) return showToast('Tidak ada data log yang sesuai filter untuk diunduh!', 'warning');
+            if (rows.length === 0) return showToast('Tidak ada data log yang sesuai filter!', 'warning');
 
             const dataExport = [['No', 'Waktu Kehadiran', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Kategori', 'Status']];
             rows.forEach((tr, idx) => {
@@ -1176,53 +1209,72 @@
         }
 
         // =========================================================================
+        // LAZY RENDER QR CODE (AGAR BROWSER TIDAK PERNAH MACET)
+        // =========================================================================
+        function renderSingleQR(wrapper) {
+            if (!wrapper || wrapper.querySelector('canvas')) return;
+            const qrData = wrapper.getAttribute('data-qr');
+            const qrType = wrapper.getAttribute('data-qr-type');
+            if (!qrData) return;
+
+            const isGuru = qrType === 'guru';
+            const qrCode = new QRCodeStyling({
+                width: 280, height: 280, data: qrData, margin: 0,
+                qrOptions: { errorCorrectionLevel: "M" },
+                dotsOptions: { 
+                    type: "rounded", 
+                    gradient: { 
+                        type: "linear", 
+                        rotation: Math.PI / 4, 
+                        colorStops: isGuru ? [{ offset: 0, color: "#9333ea" }, { offset: 1, color: "#4f46e5" }] : [{ offset: 0, color: "#4f46e5" }, { offset: 1, color: "#0ea5e9" }] 
+                    } 
+                },
+                cornersSquareOptions: { type: "extra-rounded", color: isGuru ? "#581c87" : "#1e1b4b" },
+                backgroundOptions: { color: "#ffffff" }
+            });
+            qrCode.append(wrapper);
+        }
+
+        const qrObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    renderSingleQR(entry.target);
+                    qrObserver.unobserve(entry.target);
+                }
+            });
+        }, { rootMargin: '150px' });
+
+        // =========================================================================
         // MANAJEMEN DATA GURU & QR CODE
         // =========================================================================
         function renderTableGuru(dataGuru) {
             const tbody = document.getElementById('guruTableBody'); 
             tbody.innerHTML = ''; 
             if(!dataGuru || dataGuru.length <= 1) { 
-                totalGuruDatabase = 0;
-                const badgeGuru = document.getElementById('badgeCountGuru');
-                if (badgeGuru) badgeGuru.innerText = '0';
                 tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400 text-sm">Belum ada data guru terdaftar</td></tr>`; 
                 return; 
             }
 
-            const listGuru = [];
+            const fragment = document.createDocumentFragment();
+            let idx = 0;
             for(let i = 1; i < dataGuru.length; i++) {
                 const row = dataGuru[i];
                 if(!row || (!row[0] && !row[1])) continue;
-                listGuru.push({
-                    sheetOrder: i,
-                    nip: bersihkanID(row[0]),
-                    nama: (row[1] || '').toString().trim(),
-                    rfid: bersihkanID(row[2]) || '-'
-                });
+                idx++;
+                const nip = bersihkanID(row[0]);
+                const nama = (row[1] || '').toString().trim();
+                const rfid = bersihkanID(row[2]) || '-';
+                const tr = buatBarisGuru(idx, nip, nama, rfid, i);
+                fragment.appendChild(tr);
             }
+            tbody.appendChild(fragment);
 
-            totalGuruDatabase = listGuru.length;
-            const badgeGuru = document.getElementById('badgeCountGuru');
-            if (badgeGuru) badgeGuru.innerText = totalGuruDatabase;
-
-            listGuru.forEach((guru, idx) => {
-                const nomorUrut = idx + 1;
-                tbody.appendChild(buatBarisGuru(nomorUrut, guru.nip, guru.nama, guru.rfid, guru.sheetOrder));
-
-                const qrString = `NIP: ${guru.nip}\nNama: ${guru.nama}`;
-                const qrCode = new QRCodeStyling({
-                    width: 512, height: 512, data: qrString, margin: 0,
-                    qrOptions: { errorCorrectionLevel: "M" },
-                    dotsOptions: { type: "rounded", gradient: { type: "linear", rotation: Math.PI / 4, colorStops: [{ offset: 0, color: "#9333ea" }, { offset: 1, color: "#4f46e5" }] } },
-                    cornersSquareOptions: { type: "extra-rounded", color: "#581c87" },
-                    backgroundOptions: { color: "#ffffff" }
-                });
-                qrCode.append(document.getElementById(`qr-guru-${guru.sheetOrder}`));
-            });
+            tbody.querySelectorAll('.qr-lazy-target').forEach(el => qrObserver.observe(el));
         }
 
         function buatBarisGuru(noUrut, nip, nama, rfid, index) {
             const safeNama = nama.replace(/'/g, "\\'");
+            const qrString = `NIP: ${nip}\nNama: ${nama}`;
             const tr = document.createElement('tr'); 
             tr.className = "hover:bg-slate-50/80 transition-colors baris-guru";
             tr.setAttribute('data-index', index);
@@ -1238,7 +1290,7 @@
                 <td class="px-5 py-3.5 text-xs font-mono-code text-slate-500">${rfid !== '-' ? `<span class="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">${rfid}</span>` : '-'}</td>
                 <td class="px-5 py-3.5 text-center">
                     <div class="inline-flex items-center gap-3 bg-slate-50/80 p-1.5 rounded-xl border border-slate-200/60">
-                        <div id="qr-guru-${index}" onclick="bukaPreviewQR('qr-guru-${index}', '${safeNama}', 'NIP: ${nip}', 'DEWAN GURU')" title="Klik untuk perbesar QR" class="qr-hd-wrapper p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all"></div>
+                        <div id="qr-guru-${index}" data-qr="${qrString.replace(/"/g, '&quot;')}" data-qr-type="guru" onclick="bukaPreviewQR('qr-guru-${index}', '${safeNama}', 'NIP: ${nip}', 'DEWAN GURU')" title="Klik untuk perbesar QR" class="qr-hd-wrapper qr-lazy-target p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all"></div>
                         <button onclick="downloadQRGuru(${index}, '${nip}', '${safeNama}')" class="text-xs font-semibold bg-white hover:bg-purple-50 text-purple-700 border border-slate-200 hover:border-purple-200 px-3 py-1.5 rounded-lg shadow-sm transition-all">
                             <i class="fa-solid fa-download mr-1"></i>PNG
                         </button>
@@ -1261,9 +1313,7 @@
             });
         }
 
-        function toggleManualGuruForm() {
-            document.getElementById('manualAddGuruModal').classList.toggle('hidden');
-        }
+        function toggleManualGuruForm() { document.getElementById('manualAddGuruModal').classList.toggle('hidden'); }
 
         function tambahGuruManual() {
             const nip = document.getElementById('inputNIP').value.trim();
@@ -1277,8 +1327,7 @@
             document.getElementById('guruTableBody').insertBefore(tr, document.getElementById('guruTableBody').firstChild);
             
             updatePendingSaveBadge();
-            showToast(`Data ${nama} ditambahkan ke antrean. Klik "Simpan Antrean" di atas.`, 'info');
-            
+            showToast(`Data ${nama} ditambahkan ke antrean.`, 'info');
             document.getElementById('inputNIP').value = '';
             document.getElementById('inputNamaGuru').value = '';
             document.getElementById('inputRfidGuru').value = '';
@@ -1297,7 +1346,7 @@
                 });
                 if (count > 0) {
                     updatePendingSaveBadge();
-                    showToast(`${count} data guru masuk antrean. Klik tombol hijau "Simpan Antrean" di kanan atas.`, 'success');
+                    showToast(`${count} data guru masuk antrean. Klik "Simpan Antrean".`, 'success');
                 }
                 document.getElementById('csvFileGuru').value = ''; 
             }});
@@ -1305,16 +1354,27 @@
 
         function downloadQRGuru(index, nip, nama) {
             const wrapper = document.getElementById(`qr-guru-${index}`);
-            const canvas = wrapper ? wrapper.querySelector('canvas') : null;
-            if (canvas) {
-                const labeledCanvas = buatCanvasQRDenganLabel(canvas, nip, nama, 'GURU');
-                const link = document.createElement('a'); 
-                link.href = labeledCanvas.toDataURL("image/png");
-                const safeFileName = nama.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_');
-                link.download = `QR_GURU_${nip}_${safeFileName}.png`; 
-                link.click();
-            } else {
-                showToast("QR Code sedang dimuat, silakan tunggu sebentar.", "warning");
+            if (wrapper && !wrapper.querySelector('canvas')) renderSingleQR(wrapper);
+            setTimeout(() => {
+                const canvas = wrapper ? wrapper.querySelector('canvas') : null;
+                if (canvas) {
+                    const labeledCanvas = buatCanvasQRDenganLabel(canvas, nip, nama, 'GURU');
+                    const link = document.createElement('a'); 
+                    link.href = labeledCanvas.toDataURL("image/png");
+                    link.download = `QR_GURU_${nip}_${nama.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_')}.png`; 
+                    link.click();
+                }
+            }, 60);
+        }
+
+        async function pastikanSemuaQRTerbuat(barisTarget, prefixId) {
+            for (let i = 0; i < barisTarget.length; i++) {
+                const idx = barisTarget[i].getAttribute('data-index');
+                const wrapper = document.getElementById(`${prefixId}${idx}`);
+                if (wrapper && !wrapper.querySelector('canvas')) {
+                    renderSingleQR(wrapper);
+                    await new Promise(r => setTimeout(r, 15));
+                }
             }
         }
 
@@ -1328,16 +1388,11 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyusun PDF...`;
 
             try {
+                await pastikanSemuaQRTerbuat(barisTarget, 'qr-guru-');
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                 
-                const cardW = 85.6;
-                const cardH = 54;
-                const gapX = 5;
-                const gapY = 5;
-                const cols = 3; 
-                const rows = 2; 
-                
+                const cardW = 85.6, cardH = 54, gapX = 5, gapY = 5, cols = 3, rows = 2; 
                 const startX = (297 - (cols * cardW + (cols - 1) * gapX)) / 2;
                 const startY = (210 - (rows * cardH + (rows - 1) * gapY)) / 2;
 
@@ -1347,17 +1402,12 @@
                     if (posInPage === 0) {
                         if (!isFirstPage) doc.addPage();
                         isFirstPage = false;
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(10);
-                        doc.setTextColor(30, 41, 59);
+                        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
                         doc.text(`CETAK KARTU ABSENSI GURU (ID CARD TANPA FOTO)`, 148.5, 10, { align: 'center' });
                     }
 
-                    const colIdx = posInPage % cols;
-                    const rowIdx = Math.floor(posInPage / cols);
-                    const x = startX + colIdx * (cardW + gapX);
-                    const y = startY + rowIdx * (cardH + gapY);
+                    const colIdx = posInPage % cols, rowIdx = Math.floor(posInPage / cols);
+                    const x = startX + colIdx * (cardW + gapX), y = startY + rowIdx * (cardH + gapY);
 
                     const tr = barisTarget[i];
                     const index = tr.getAttribute('data-index');
@@ -1367,88 +1417,44 @@
                     const wrapper = document.getElementById(`qr-guru-${index}`);
                     let canvas = wrapper ? wrapper.querySelector('canvas') : null;
 
-                    doc.setDrawColor(203, 213, 225);
-                    doc.setLineWidth(0.3);
-                    doc.roundedRect(x, y, cardW, cardH, 2, 2, 'S');
+                    doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.3); doc.roundedRect(x, y, cardW, cardH, 2, 2, 'S');
+                    doc.setFillColor(30, 58, 138); doc.roundedRect(x, y, cardW, 14, 2, 2, 'F'); doc.rect(x, y + 7, cardW, 7, 'F'); 
 
-                    doc.setFillColor(30, 58, 138); 
-                    doc.roundedRect(x, y, cardW, 14, 2, 2, 'F');
-                    doc.rect(x, y + 7, cardW, 7, 'F'); 
-
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(7.5);
-                    doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255);
                     doc.text("SMP NEGERI 1 SATUI", x + 6, y + 6);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(5.5);
-                    doc.setTextColor(226, 232, 240);
+                    doc.setFont('helvetica', 'normal'); doc.setFontSize(5.5); doc.setTextColor(226, 232, 240);
                     doc.text("BERILMU \u2022 BERAKHLAK \u2022 BERPRESTASI", x + 6, y + 10.5);
 
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(6);
-                    doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor(255, 255, 255);
                     doc.text("KARTU ABSENSI GURU", x + cardW - 5, y + 6, { align: 'right' });
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(5);
+                    doc.setFont('helvetica', 'normal'); doc.setFontSize(5);
                     doc.text("TAHUN AJARAN 2025/2026", x + cardW - 5, y + 10.5, { align: 'right' });
 
-                    const textX = x + 6;
-                    let textY = y + 21;
-
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(6.5);
-                    doc.setTextColor(100, 116, 139);
-                    doc.text("Nama", textX, textY);
-                    doc.text(":", textX + 12, textY);
-                    doc.setFont('helvetica', 'bold');
+                    const textX = x + 6; let textY = y + 21;
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(100, 116, 139);
+                    doc.text("Nama", textX, textY); doc.text(":", textX + 12, textY);
                     doc.setTextColor(15, 23, 42);
-                    const namaMax = nama.length > 24 ? nama.substring(0, 24) + '...' : nama;
-                    doc.text(namaMax, textX + 15, textY);
+                    doc.text(nama.length > 24 ? nama.substring(0, 24) + '...' : nama, textX + 15, textY);
 
                     textY += 6.5;
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(6.5);
-                    doc.setTextColor(100, 116, 139);
-                    doc.text("NIP", textX, textY);
-                    doc.text(":", textX + 12, textY);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(51, 65, 85);
-                    doc.text(nip, textX + 15, textY);
+                    doc.setTextColor(100, 116, 139); doc.text("NIP", textX, textY); doc.text(":", textX + 12, textY);
+                    doc.setFont('helvetica', 'normal'); doc.setTextColor(51, 65, 85); doc.text(nip, textX + 15, textY);
 
                     textY += 6.5;
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(6.5);
-                    doc.setTextColor(100, 116, 139);
-                    doc.text("Jabatan", textX, textY);
-                    doc.text(":", textX + 12, textY);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(51, 65, 85);
-                    doc.text("Dewan Guru / Pengajar", textX + 15, textY);
+                    doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 116, 139); doc.text("Jabatan", textX, textY); doc.text(":", textX + 12, textY);
+                    doc.setFont('helvetica', 'normal'); doc.setTextColor(51, 65, 85); doc.text("Dewan Guru / Pengajar", textX + 15, textY);
 
-                    if (canvas) {
-                        const qrSize = 25;
-                        const qrX = x + cardW - qrSize - 6;
-                        const qrY = y + 16.5;
-                        doc.addImage(canvas.toDataURL('image/png'), 'PNG', qrX, qrY, qrSize, qrSize);
-                    }
+                    if (canvas) doc.addImage(canvas.toDataURL('image/png'), 'PNG', x + cardW - 31, y + 16.5, 25, 25);
 
-                    doc.setFillColor(248, 250, 252);
-                    doc.rect(x, y + cardH - 8, cardW, 8, 'F');
-                    doc.setFont('helvetica', 'italic');
-                    doc.setFontSize(4.5);
-                    doc.setTextColor(100, 116, 139);
+                    doc.setFillColor(248, 250, 252); doc.rect(x, y + cardH - 8, cardW, 8, 'F');
+                    doc.setFont('helvetica', 'italic'); doc.setFontSize(4.5); doc.setTextColor(100, 116, 139);
                     doc.text("Gunakan kartu ini untuk pemindaian absensi mandiri di SMPN 1 Satui", x + (cardW / 2), y + cardH - 3, { align: 'center' });
                 }
 
                 doc.save('ID_Card_Guru_Tanpa_Foto.pdf');
                 showToast('PDF ID Card Guru berhasil diunduh.', 'success');
-            } catch (err) {
-                console.error(err);
-                showToast('Gagal menyusun PDF ID Card Guru.', 'error');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
+                btn.disabled = false; btn.innerHTML = originalHTML;
             }
         }
 
@@ -1458,10 +1464,10 @@
 
             const btn = document.getElementById('btnBulkDownloadQRGuru');
             const originalHTML = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memproses ZIP...`;
+            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memproses ZIP...`;
 
             try {
+                await pastikanSemuaQRTerbuat(barisTarget, 'qr-guru-');
                 const zip = new JSZip();
                 for (let i = 0; i < barisTarget.length; i++) {
                     const tr = barisTarget[i];
@@ -1479,14 +1485,11 @@
                 }
                 const zipBlob = await zip.generateAsync({ type: "blob" });
                 const link = document.createElement('a');
-                link.href = URL.createObjectURL(zipBlob);
-                link.download = 'QR_Code_Guru.zip';
-                link.click();
+                link.href = URL.createObjectURL(zipBlob); link.download = 'QR_Code_Guru.zip'; link.click();
                 URL.revokeObjectURL(link.href);
                 showToast('Arsip ZIP QR Guru berhasil diunduh.', 'success');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
+                btn.disabled = false; btn.innerHTML = originalHTML;
             }
         }
 
@@ -1524,9 +1527,7 @@
                 const nis = bersihkanID(row[0]);
                 const nama = (row[1] || '').toString().trim();
                 const kelas = (row[2] || '-').toString().trim();
-                if (kelasTarget === 'Semua' || kelas === kelasTarget) {
-                    list.push({ nis, nama, kelas });
-                }
+                if (kelasTarget === 'Semua' || kelas === kelasTarget) list.push({ nis, nama, kelas });
             }
             return list;
         }
@@ -1536,18 +1537,13 @@
             for (let i = 1; i < masterDataGuru.length; i++) {
                 const row = masterDataGuru[i];
                 if (!row || (!row[0] && !row[1])) continue;
-                const nip = bersihkanID(row[0]);
-                const nama = (row[1] || '').toString().trim();
-                list.push({ nis: nip, nama, kelas: 'Guru' });
+                list.push({ nis: bersihkanID(row[0]), nama: (row[1] || '').toString().trim(), kelas: 'Guru' });
             }
             return list;
         }
 
         function bangunPetaKehadiran() {
-            const mapID = new Set();
-            const mapNamaKelas = new Set();
-            const mapNamaSaja = new Set();
-
+            const mapID = new Set(), mapNamaKelas = new Set(), mapNamaSaja = new Set();
             for (let i = 1; i < masterDataAbsen.length; i++) {
                 const row = masterDataAbsen[i];
                 if (!row || !row[0]) continue;
@@ -1571,14 +1567,9 @@
                     const cleanID = bersihkanID(peserta.nis).toLowerCase();
                     const cleanNama = (peserta.nama || '').toString().trim().toLowerCase();
                     const cleanKelas = (peserta.kelas || '').toString().trim().toLowerCase();
-
-                    const idKey = `${cleanID}|${dateKey}`;
-                    const namaKelasKey = `${cleanNama}|${cleanKelas}|${dateKey}`;
-                    const namaOnlyKey = `${cleanNama}|${dateKey}`;
-
-                    if (cleanID && mapID.has(idKey)) return true;
-                    if (cleanNama && mapNamaKelas.has(namaKelasKey)) return true;
-                    if (cleanNama && mapNamaSaja.has(namaOnlyKey)) return true;
+                    if (cleanID && mapID.has(`${cleanID}|${dateKey}`)) return true;
+                    if (cleanNama && mapNamaKelas.has(`${cleanNama}|${cleanKelas}|${dateKey}`)) return true;
+                    if (cleanNama && mapNamaSaja.has(`${cleanNama}|${dateKey}`)) return true;
                     return false;
                 }
             };
@@ -1601,7 +1592,7 @@
             const isGuru = targetRekap === 'guru';
 
             if (isGuru && (!masterDataGuru || masterDataGuru.length <= 1)) {
-                document.getElementById('rekapTableBody').innerHTML = `<tr><td colspan="10" class="px-6 py-12 text-center text-slate-400">Belum ada data guru terdaftar di Sheet Data Guru.</td></tr>`;
+                document.getElementById('rekapTableBody').innerHTML = `<tr><td colspan="10" class="px-6 py-12 text-center text-slate-400">Belum ada data guru terdaftar.</td></tr>`;
                 updateStatistikRekapUI(0, 0, 0, true);
                 return;
             }
@@ -1614,13 +1605,9 @@
             const pesertaList = isGuru ? ambilDaftarGuruRekap() : ambilDaftarSiswaTerfilter(kelasDipilih);
             const petaAbsen = bangunPetaKehadiran();
 
-            if (tipePeriode === 'mingguan') {
-                buatRekapMingguan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
-            } else if (tipePeriode === 'bulanan') {
-                buatRekapBulanan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
-            } else if (tipePeriode === 'semester') {
-                buatRekapSemester(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
-            }
+            if (tipePeriode === 'mingguan') buatRekapMingguan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
+            else if (tipePeriode === 'bulanan') buatRekapBulanan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
+            else if (tipePeriode === 'semester') buatRekapSemester(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
         }
 
         function buatRekapMingguan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru = false) {
@@ -1645,13 +1632,8 @@
             const endDay = daftarHari[daftarHari.length - 1].dateObj;
             const rentangTeks = `${monday.getDate()} ${NAMA_BULAN_PENDEK[monday.getMonth()]} ${monday.getFullYear()} - ${endDay.getDate()} ${NAMA_BULAN_PENDEK[endDay.getMonth()]} ${endDay.getFullYear()}`;
 
-            const colIdLabel = isGuru ? 'NIP' : 'NIS';
-            const colNamaLabel = isGuru ? 'Nama Guru' : 'Nama Siswa';
-            const colKlsLabel = isGuru ? 'Jabatan' : 'Kelas';
-
-            const headers = ['No', colIdLabel, colNamaLabel, colKlsLabel, ...daftarHari.map(h => h.label), 'Total Hadir', 'Tidak Hadir', 'Persentase'];
-            const rows = [];
-            const perKelasData = {};
+            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...daftarHari.map(h => h.label), 'Total Hadir', 'Tidak Hadir', 'Persentase'];
+            const rows = [], perKelasData = {};
             let grandTotalHadir = 0;
             const hariEfektif = daftarHari.length;
 
@@ -1679,10 +1661,7 @@
                 judul: `REKAP ABSENSI MINGGUAN - ${labelTarget}`,
                 subJudul: `Periode Minggu: ${rentangTeks}`,
                 namaFile: `Rekap_Mingguan_${isGuru ? 'Guru' : kelasDipilih}_${formatDateKey(monday)}`,
-                headers,
-                rows: rows.map(r => r.raw),
-                perKelasData,
-                isGuru
+                headers, rows: rows.map(r => r.raw), perKelasData, isGuru
             };
 
             updateStatistikRekapUI(pesertaList.length, hariEfektif, grandTotalHadir, isGuru);
@@ -1691,11 +1670,9 @@
 
         function buatRekapBulanan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru = false) {
             const now = new Date();
-            const defaultBulan = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const blnInput = document.getElementById('rekapBulan').value || defaultBulan;
+            const blnInput = document.getElementById('rekapBulan').value || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const [yearStr, monthStr] = blnInput.split('-');
-            const year = parseInt(yearStr, 10);
-            const month = parseInt(monthStr, 10) - 1;
+            const year = parseInt(yearStr, 10), month = parseInt(monthStr, 10) - 1;
 
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const daftarTanggal = [];
@@ -1709,14 +1686,8 @@
                 daftarTanggal.push({ dayNum: d, dateKey: formatDateKey(dateObj), isLibur });
             }
 
-            const namaBulanTahun = `${NAMA_BULAN[month]} ${year}`;
-            const colIdLabel = isGuru ? 'NIP' : 'NIS';
-            const colNamaLabel = isGuru ? 'Nama Guru' : 'Nama Siswa';
-            const colKlsLabel = isGuru ? 'Jabatan' : 'Kelas';
-
-            const headers = ['No', colIdLabel, colNamaLabel, colKlsLabel, ...daftarTanggal.map(t => String(t.dayNum)), 'Hadir', 'Tidak Hadir', '%'];
-            const rows = [];
-            const perKelasData = {};
+            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...daftarTanggal.map(t => String(t.dayNum)), 'Hadir', 'Tidak Hadir', '%'];
+            const rows = [], perKelasData = {};
             let grandTotalHadir = 0;
 
             pesertaList.forEach((peserta, idx) => {
@@ -1742,12 +1713,9 @@
             const labelTarget = isGuru ? 'DEWAN GURU' : (kelasDipilih === 'Semua' ? 'SEMUA KELAS' : 'KELAS ' + kelasDipilih);
             currentRekapResult = {
                 judul: `REKAP ABSENSI BULANAN - ${labelTarget}`,
-                subJudul: `Bulan: ${namaBulanTahun} (Hari Efektif: ${hariEfektif} Hari)`,
+                subJudul: `Bulan: ${NAMA_BULAN[month]} ${year} (Hari Efektif: ${hariEfektif} Hari)`,
                 namaFile: `Rekap_Bulanan_${isGuru ? 'Guru' : kelasDipilih}_${NAMA_BULAN[month]}_${year}`,
-                headers,
-                rows: rows.map(r => r.raw),
-                perKelasData,
-                isGuru
+                headers, rows: rows.map(r => r.raw), perKelasData, isGuru
             };
 
             updateStatistikRekapUI(pesertaList.length, hariEfektif, grandTotalHadir, isGuru);
@@ -1760,21 +1728,14 @@
 
             const bulanIndexList = jenisSem === 'Ganjil' ? [6, 7, 8, 9, 10, 11] : [0, 1, 2, 3, 4, 5];
             const infoBulan = bulanIndexList.map(mIdx => {
-                const startD = new Date(tahun, mIdx, 1);
-                const endD = new Date(tahun, mIdx + 1, 0);
-                const efektif = hitungHariEfektifRentang(startD, endD, hariKerja);
-                return { monthIdx: mIdx, label: NAMA_BULAN_PENDEK[mIdx], daysInMonth: endD.getDate(), efektif };
+                const startD = new Date(tahun, mIdx, 1), endD = new Date(tahun, mIdx + 1, 0);
+                return { monthIdx: mIdx, label: NAMA_BULAN_PENDEK[mIdx], daysInMonth: endD.getDate(), efektif: hitungHariEfektifRentang(startD, endD, hariKerja) };
             });
 
             const totalHariEfektifSemester = infoBulan.reduce((acc, b) => acc + b.efektif, 0);
-            const colIdLabel = isGuru ? 'NIP' : 'NIS';
-            const colNamaLabel = isGuru ? 'Nama Guru' : 'Nama Siswa';
-            const colKlsLabel = isGuru ? 'Jabatan' : 'Kelas';
+            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...infoBulan.map(b => `${b.label} (${b.efektif}hr)`), 'Total Hadir', 'Total Tidak Hadir', 'Persentase'];
 
-            const headers = ['No', colIdLabel, colNamaLabel, colKlsLabel, ...infoBulan.map(b => `${b.label} (${b.efektif}hr)`), 'Total Hadir', 'Total Tidak Hadir', 'Persentase'];
-
-            const rows = [];
-            const perKelasData = {};
+            const rows = [], perKelasData = {};
             let grandTotalHadir = 0;
 
             pesertaList.forEach((peserta, idx) => {
@@ -1803,12 +1764,9 @@
             const labelTarget = isGuru ? 'DEWAN GURU' : (kelasDipilih === 'Semua' ? 'SEMUA KELAS' : 'KELAS ' + kelasDipilih);
             currentRekapResult = {
                 judul: `REKAP ABSENSI SEMESTER ${jenisSem.toUpperCase()} - ${labelTarget}`,
-                subJudul: `Semester ${jenisSem} Tahun ${tahun} (${jenisSem === 'Ganjil' ? 'Juli - Desember' : 'Januari - Juni'} ${tahun}) | Total Hari Efektif: ${totalHariEfektifSemester} Hari`,
+                subJudul: `Semester ${jenisSem} Tahun ${tahun} | Total Hari Efektif: ${totalHariEfektifSemester} Hari`,
                 namaFile: `Rekap_Semester_${jenisSem}_${tahun}_${isGuru ? 'Guru' : kelasDipilih}`,
-                headers,
-                rows: rows.map(r => r.raw),
-                perKelasData,
-                isGuru
+                headers, rows: rows.map(r => r.raw), perKelasData, isGuru
             };
 
             updateStatistikRekapUI(pesertaList.length, totalHariEfektifSemester, grandTotalHadir, isGuru);
@@ -1821,8 +1779,7 @@
             document.getElementById('infoRekapTotalHadir').innerText = `${totalHadir} Kehadiran`;
 
             const maxKehadiran = jmlPeserta * hariEfektif;
-            const rataPersen = maxKehadiran > 0 ? Math.round((totalHadir / maxKehadiran) * 100) : 0;
-            document.getElementById('infoRekapPersentase').innerText = `${rataPersen}%`;
+            document.getElementById('infoRekapPersentase').innerText = `${maxKehadiran > 0 ? Math.round((totalHadir / maxKehadiran) * 100) : 0}%`;
 
             document.getElementById('judulTabelRekap').innerText = currentRekapResult.judul || 'Pratinjau Rekap Kehadiran';
             document.getElementById('subJudulTabelRekap').innerText = currentRekapResult.subJudul || '';
@@ -1853,28 +1810,17 @@
                 const r = item.raw;
                 bodyHTML += `<tr class="bg-white hover:bg-indigo-50/40 transition-colors">`;
                 r.forEach((cell, cIdx) => {
-                    if (cIdx === 0 || cIdx === 3) {
-                        bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center whitespace-nowrap text-slate-600">${cell}</td>`;
-                    } else if (cIdx === 1) {
-                        bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-mono-code text-[11px] text-slate-500 whitespace-nowrap">${cell}</td>`;
-                    } else if (cIdx === 2) {
-                        bodyHTML += `<td class="px-3 py-2 border border-slate-100 font-bold text-slate-800 whitespace-nowrap sticky-col-nama shadow-[1px_0_0_#f1f5f9]">${cell}</td>`;
-                    } else if (cIdx === r.length - 3) {
-                        bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-emerald-700 bg-emerald-50/50">${cell}</td>`;
-                    } else if (cIdx === r.length - 2) {
-                        bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-rose-600 bg-rose-50/40">${cell}</td>`;
-                    } else if (cIdx === r.length - 1) {
-                        bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-indigo-700 bg-indigo-50/40">${cell}</td>`;
-                    } else {
-                        if (cell === '✓') {
-                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-emerald-600 font-extrabold bg-emerald-50/30">✓</td>`;
-                        } else if (cell === 'L') {
-                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-slate-300 bg-slate-100/70 text-[10px]">-</td>`;
-                        } else if (cell === '-') {
-                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-rose-300">-</td>`;
-                        } else {
-                            bodyHTML += `<td class="px-2 py-2 border border-slate-100 text-center font-semibold text-slate-700">${cell}</td>`;
-                        }
+                    if (cIdx === 0 || cIdx === 3) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center whitespace-nowrap text-slate-600">${cell}</td>`;
+                    else if (cIdx === 1) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-mono-code text-[11px] text-slate-500 whitespace-nowrap">${cell}</td>`;
+                    else if (cIdx === 2) bodyHTML += `<td class="px-3 py-2 border border-slate-100 font-bold text-slate-800 whitespace-nowrap sticky-col-nama shadow-[1px_0_0_#f1f5f9]">${cell}</td>`;
+                    else if (cIdx === r.length - 3) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-emerald-700 bg-emerald-50/50">${cell}</td>`;
+                    else if (cIdx === r.length - 2) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-rose-600 bg-rose-50/40">${cell}</td>`;
+                    else if (cIdx === r.length - 1) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-indigo-700 bg-indigo-50/40">${cell}</td>`;
+                    else {
+                        if (cell === '✓') bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-emerald-600 font-extrabold bg-emerald-50/30">✓</td>`;
+                        else if (cell === 'L') bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-slate-300 bg-slate-100/70 text-[10px]">-</td>`;
+                        else if (cell === '-') bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-rose-300">-</td>`;
+                        else bodyHTML += `<td class="px-2 py-2 border border-slate-100 text-center font-semibold text-slate-700">${cell}</td>`;
                     }
                 });
                 bodyHTML += `</tr>`;
@@ -1911,12 +1857,10 @@
 
             if (!isGuru && kelasDipilih === 'Semua' && Object.keys(currentRekapResult.perKelasData).length > 1) {
                 XLSX.utils.book_append_sheet(wb, buatSheetRekap('Semua Kelas', currentRekapResult.rows), 'Semua_Kelas');
-                Object.keys(currentRekapResult.perKelasData)
-                    .sort((a, b) => a.localeCompare(b, 'id', { numeric: true }))
-                    .forEach(kls => {
-                        const safeSheetName = `Kelas_${kls}`.replace(/[\\/?*\[\]:]/g, '_').substring(0, 31);
-                        XLSX.utils.book_append_sheet(wb, buatSheetRekap(`Kelas ${kls}`, currentRekapResult.perKelasData[kls]), safeSheetName);
-                    });
+                Object.keys(currentRekapResult.perKelasData).sort((a, b) => a.localeCompare(b, 'id', { numeric: true })).forEach(kls => {
+                    const safeSheetName = `Kelas_${kls}`.replace(/[\\/?*\[\]:]/g, '_').substring(0, 31);
+                    XLSX.utils.book_append_sheet(wb, buatSheetRekap(`Kelas ${kls}`, currentRekapResult.perKelasData[kls]), safeSheetName);
+                });
             } else {
                 const sheetName = isGuru ? 'Rekap_Guru' : (kelasDipilih === 'Semua' ? 'Rekap_Siswa' : `Kelas_${kelasDipilih}`);
                 XLSX.utils.book_append_sheet(wb, buatSheetRekap('', currentRekapResult.rows), sheetName.replace(/[\\/?*\[\]:]/g, '_').substring(0, 31));
@@ -1935,15 +1879,9 @@
 
             const cetakTabel = (judulLaporan, rowsData, isFirstPage) => {
                 if (!isFirstPage) doc.addPage();
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(13);
-                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(30, 41, 59);
                 doc.text(judulLaporan, 14, 14);
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9.5);
-                doc.setTextColor(71, 85, 105);
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(71, 85, 105);
                 doc.text(currentRekapResult.subJudul, 14, 20);
 
                 const pdfBody = rowsData.map(row => row.map(cell => (cell === '✓' ? 'H' : cell)));
@@ -1954,17 +1892,8 @@
                     head: [currentRekapResult.headers],
                     body: pdfBody,
                     theme: 'grid',
-                    styles: {
-                        fontSize: isManyCols ? 6.5 : 8.5,
-                        cellPadding: isManyCols ? 1.2 : 2,
-                        valign: 'middle',
-                        halign: 'center'
-                    },
-                    headStyles: {
-                        fillColor: isGuru ? [147, 51, 234] : [79, 70, 229],
-                        textColor: [255, 255, 255],
-                        fontStyle: 'bold'
-                    },
+                    styles: { fontSize: isManyCols ? 6.5 : 8.5, cellPadding: isManyCols ? 1.2 : 2, valign: 'middle', halign: 'center' },
+                    headStyles: { fillColor: isGuru ? [147, 51, 234] : [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
                     columnStyles: {
                         0: { cellWidth: isManyCols ? 7 : 10 },
                         1: { cellWidth: isManyCols ? 24 : 30 },
@@ -1973,32 +1902,17 @@
                     },
                     didParseCell: function (data) {
                         if (data.section === 'body') {
-                            if (data.cell.raw === 'H') {
-                                data.cell.styles.textColor = [5, 150, 105];
-                                data.cell.styles.fontStyle = 'bold';
-                            } else if (data.cell.raw === 'L') {
-                                data.cell.styles.fillColor = [241, 245, 249];
-                                data.cell.styles.textColor = [148, 163, 184];
-                            }
+                            if (data.cell.raw === 'H') { data.cell.styles.textColor = [5, 150, 105]; data.cell.styles.fontStyle = 'bold'; }
+                            else if (data.cell.raw === 'L') { data.cell.styles.fillColor = [241, 245, 249]; data.cell.styles.textColor = [148, 163, 184]; }
                         }
                     }
                 });
-
-                const finalY = doc.lastAutoTable.finalY + 8;
-                if (finalY < 185) {
-                    doc.setFontSize(8.5);
-                    doc.setTextColor(100, 116, 139);
-                    doc.text('Keterangan: H = Hadir, - = Tidak Hadir, L = Hari Libur', 14, finalY);
-                    doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, 283, finalY, { align: 'right' });
-                }
             };
 
             if (!isGuru && kelasDipilih === 'Semua' && Object.keys(currentRekapResult.perKelasData).length > 1) {
-                Object.keys(currentRekapResult.perKelasData)
-                    .sort((a, b) => a.localeCompare(b, 'id', { numeric: true }))
-                    .forEach((kls, idx) => {
-                        cetakTabel(currentRekapResult.judul.replace('SEMUA KELAS', 'KELAS ' + kls), currentRekapResult.perKelasData[kls], idx === 0);
-                    });
+                Object.keys(currentRekapResult.perKelasData).sort((a, b) => a.localeCompare(b, 'id', { numeric: true })).forEach((kls, idx) => {
+                    cetakTabel(currentRekapResult.judul.replace('SEMUA KELAS', 'KELAS ' + kls), currentRekapResult.perKelasData[kls], idx === 0);
+                });
             } else {
                 cetakTabel(currentRekapResult.judul, currentRekapResult.rows, true);
             }
@@ -2008,55 +1922,37 @@
         }
 
         // =========================================================================
-        // MANAJEMEN DATA SISWA & QR CODE
+        // MANAJEMEN DATA SISWA & QR CODE (LAZY LOADED)
         // =========================================================================
         function renderTableSiswa(dataSiswa) {
             const tbody = document.getElementById('siswaTableBody'); 
             tbody.innerHTML = ''; 
             if(!dataSiswa || dataSiswa.length <= 1) { 
-                totalSiswaDatabase = 0;
-                const badgeSiswa = document.getElementById('badgeCountSiswa');
-                if (badgeSiswa) badgeSiswa.innerText = '0';
                 tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400 text-sm">Belum ada data siswa terdaftar</td></tr>`; 
                 return; 
             }
 
-            const listSiswa = [];
+            const fragment = document.createDocumentFragment();
+            let idx = 0;
             for(let i = 1; i < dataSiswa.length; i++) {
                 const row = dataSiswa[i];
                 if(!row || (!row[0] && !row[1])) continue;
-                listSiswa.push({
-                    sheetOrder: i,
-                    nis: bersihkanID(row[0]),
-                    nama: (row[1] || '').toString().trim(),
-                    kelas: (row[2] || '-').toString().trim()
-                });
+                idx++;
+                const nis = bersihkanID(row[0]);
+                const nama = (row[1] || '').toString().trim();
+                const kelas = (row[2] || '-').toString().trim();
+                fragment.appendChild(buatBarisSiswa(idx, nis, nama, kelas, i));
             }
+            tbody.appendChild(fragment);
 
-            totalSiswaDatabase = listSiswa.length;
-            const badgeSiswa = document.getElementById('badgeCountSiswa');
-            if (badgeSiswa) badgeSiswa.innerText = totalSiswaDatabase;
-
-            listSiswa.forEach((siswa, idx) => {
-                const nomorUrut = idx + 1;
-                tbody.appendChild(buatBarisSiswa(nomorUrut, siswa.nis, siswa.nama, siswa.kelas, siswa.sheetOrder));
-
-                const qrString = `NIS: ${siswa.nis}\nNama: ${siswa.nama}\nKelas: ${siswa.kelas}`;
-                const qrCode = new QRCodeStyling({
-                    width: 512, height: 512, data: qrString, margin: 0,
-                    qrOptions: { errorCorrectionLevel: "M" },
-                    dotsOptions: { type: "rounded", gradient: { type: "linear", rotation: Math.PI / 4, colorStops: [{ offset: 0, color: "#4f46e5" }, { offset: 1, color: "#0ea5e9" }] } },
-                    cornersSquareOptions: { type: "extra-rounded", color: "#1e1b4b" },
-                    backgroundOptions: { color: "#ffffff" }
-                });
-                qrCode.append(document.getElementById(`qr-db-${siswa.sheetOrder}`));
-            });
+            tbody.querySelectorAll('.qr-lazy-target').forEach(el => qrObserver.observe(el));
             filterDataSiswa();
         }
         
         function buatBarisSiswa(noUrut, nis, nama, kelas, index) {
             const safeNama = nama.replace(/'/g, "\\'"); 
             const safeKelas = kelas.replace(/'/g, "\\'");
+            const qrString = `NIS: ${nis}\nNama: ${nama}\nKelas: ${kelas}`;
             const tr = document.createElement('tr'); 
             tr.className = "hover:bg-slate-50/80 transition-colors baris-siswa";
             tr.setAttribute('data-index', index);
@@ -2073,7 +1969,7 @@
                 <td class="px-5 py-3.5 text-xs"><span class="bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-lg border border-slate-200/80">${kelas}</span></td>
                 <td class="px-5 py-3.5 text-center">
                     <div class="inline-flex items-center gap-3 bg-slate-50/80 p-1.5 rounded-xl border border-slate-200/60">
-                        <div id="qr-db-${index}" onclick="bukaPreviewQR('qr-db-${index}', '${safeNama}', 'NIS: ${nis}', 'KELAS ${safeKelas}')" title="Klik untuk perbesar QR" class="qr-hd-wrapper p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"></div>
+                        <div id="qr-db-${index}" data-qr="${qrString.replace(/"/g, '&quot;')}" data-qr-type="siswa" onclick="bukaPreviewQR('qr-db-${index}', '${safeNama}', 'NIS: ${nis}', 'KELAS ${safeKelas}')" title="Klik untuk perbesar QR" class="qr-hd-wrapper qr-lazy-target p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"></div>
                         <button onclick="downloadQR(${index}, '${nis}', '${safeNama}', '${safeKelas}')" class="text-xs font-semibold bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 px-3 py-1.5 rounded-lg shadow-sm transition-all">
                             <i class="fa-solid fa-download mr-1"></i>PNG
                         </button>
@@ -2109,68 +2005,49 @@
         function buatCanvasQRDenganLabel(sourceCanvas, nip, nama, kategori) {
             const outCanvas = document.createElement('canvas');
             const ctxOut = outCanvas.getContext('2d');
-            
-            const width = 600;
-            const height = 900;
-            outCanvas.width = width;
-            outCanvas.height = height;
+            const width = 600, height = 900;
+            outCanvas.width = width; outCanvas.height = height;
 
-            ctxOut.fillStyle = '#ffffff';
-            ctxOut.fillRect(0, 0, width, height);
-
+            ctxOut.fillStyle = '#ffffff'; ctxOut.fillRect(0, 0, width, height);
             const isGuru = (kategori === 'GURU');
-            ctxOut.fillStyle = isGuru ? '#9333ea' : '#4f46e5';
-            ctxOut.fillRect(0, 0, width, 110);
+            ctxOut.fillStyle = isGuru ? '#9333ea' : '#4f46e5'; ctxOut.fillRect(0, 0, width, 110);
             
-            ctxOut.fillStyle = '#ffffff';
-            ctxOut.font = 'bold 34px Plus Jakarta Sans, sans-serif';
-            ctxOut.textAlign = 'center';
+            ctxOut.fillStyle = '#ffffff'; ctxOut.font = 'bold 34px Plus Jakarta Sans, sans-serif'; ctxOut.textAlign = 'center';
             ctxOut.fillText(isGuru ? 'DEWAN GURU & TENAGA KEPENDIDIKAN' : `KELAS ${kategori}`, width / 2, 68);
 
-            const qrSize = 420;
-            const qrX = (width - qrSize) / 2;
-            const qrY = 135;
-            ctxOut.drawImage(sourceCanvas, qrX, qrY, qrSize, qrSize);
+            ctxOut.drawImage(sourceCanvas, 90, 135, 420, 420);
 
-            ctxOut.strokeStyle = '#e2e8f0';
-            ctxOut.lineWidth = 3;
-            ctxOut.beginPath();
-            ctxOut.moveTo(60, 580);
-            ctxOut.lineTo(width - 60, 580);
-            ctxOut.stroke();
+            ctxOut.strokeStyle = '#e2e8f0'; ctxOut.lineWidth = 3;
+            ctxOut.beginPath(); ctxOut.moveTo(60, 580); ctxOut.lineTo(width - 60, 580); ctxOut.stroke();
 
-            ctxOut.fillStyle = '#0f172a';
-            ctxOut.font = 'bold 32px Plus Jakarta Sans, sans-serif';
-            ctxOut.textAlign = 'center';
-            
+            ctxOut.fillStyle = '#0f172a'; ctxOut.font = 'bold 32px Plus Jakarta Sans, sans-serif';
             const namaTampil = nama.length > 32 ? nama.substring(0, 32) + '...' : nama;
             ctxOut.fillText(namaTampil.toUpperCase(), width / 2, 640);
 
-            ctxOut.fillStyle = '#475569';
-            ctxOut.font = 'bold 28px Plus Jakarta Sans, sans-serif';
+            ctxOut.fillStyle = '#475569'; ctxOut.font = 'bold 28px Plus Jakarta Sans, sans-serif';
             ctxOut.fillText(`${isGuru ? 'NIP' : 'NIS'}: ${nip}`, width / 2, 700);
 
-            ctxOut.fillStyle = '#64748b';
-            ctxOut.font = '500 22px Plus Jakarta Sans, sans-serif';
+            ctxOut.fillStyle = '#64748b'; ctxOut.font = '500 22px Plus Jakarta Sans, sans-serif';
             ctxOut.fillText(isGuru ? 'SMP NEGERI 1 SATUI' : `Kelas: ${kategori}`, width / 2, 760);
 
-            ctxOut.strokeStyle = '#cbd5e1';
-            ctxOut.lineWidth = 6;
+            ctxOut.strokeStyle = '#cbd5e1'; ctxOut.lineWidth = 6;
             ctxOut.strokeRect(3, 3, width - 6, height - 6);
-
             return outCanvas;
         }
 
         function downloadQR(index, nis, nama, kelas = '-') {
             const wrapper = document.getElementById(`qr-db-${index}`);
-            const canvas = wrapper ? wrapper.querySelector('canvas') : null;
-            if (canvas) {
-                const labeledCanvas = buatCanvasQRDenganLabel(canvas, nis, nama, kelas);
-                const link = document.createElement('a'); 
-                link.href = labeledCanvas.toDataURL("image/png");
-                link.download = `QR_${kelas}_${nis}_${nama.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_')}.png`; 
-                link.click();
-            }
+            if (wrapper && !wrapper.querySelector('canvas')) renderSingleQR(wrapper);
+            setTimeout(() => {
+                const canvas = wrapper ? wrapper.querySelector('canvas') : null;
+                if (canvas) {
+                    const labeledCanvas = buatCanvasQRDenganLabel(canvas, nis, nama, kelas);
+                    const link = document.createElement('a'); 
+                    link.href = labeledCanvas.toDataURL("image/png");
+                    link.download = `QR_${kelas}_${nis}_${nama.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_')}.png`; 
+                    link.click();
+                }
+            }, 60);
         }
 
         async function downloadPDFQR() {
@@ -2181,22 +2058,16 @@
 
             const btn = document.getElementById('btnBulkPdfQR');
             const originalHTML = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyusun PDF...`;
+            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyusun PDF...`;
 
             try {
+                await pastikanSemuaQRTerbuat(barisTarget, 'qr-db-');
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
                 const is4x6 = ukuranDipilih === '4x6';
 
-                const cardW = is4x6 ? 40 : 30;
-                const cardH = is4x6 ? 60 : 40;
-                const gapX = is4x6 ? 3 : 2;
-                const gapY = is4x6 ? 3 : 2;
-                const cols = is4x6 ? 4 : 6;
-                const rows = is4x6 ? 4 : 6;
-                const startX = (210 - (cols * cardW + (cols - 1) * gapX)) / 2;
-                const startY = 19;
+                const cardW = is4x6 ? 40 : 30, cardH = is4x6 ? 60 : 40, gapX = is4x6 ? 3 : 2, gapY = is4x6 ? 3 : 2, cols = is4x6 ? 4 : 6, rows = is4x6 ? 4 : 6;
+                const startX = (210 - (cols * cardW + (cols - 1) * gapX)) / 2, startY = 19;
 
                 let isFirstPage = true;
                 for (let i = 0; i < barisTarget.length; i++) {
@@ -2204,16 +2075,12 @@
                     if (posInPage === 0) {
                         if (!isFirstPage) doc.addPage();
                         isFirstPage = false;
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(11);
-                        doc.setTextColor(30, 41, 59);
+                        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(30, 41, 59);
                         doc.text(`KARTU QR CODE ABSENSI SISWA (${ukuranDipilih.toUpperCase()} CM)`, 105, 10, { align: 'center' });
                     }
 
-                    const colIdx = posInPage % cols;
-                    const rowIdx = Math.floor(posInPage / cols);
-                    const x = startX + colIdx * (cardW + gapX);
-                    const y = startY + rowIdx * (cardH + gapY);
+                    const colIdx = posInPage % cols, rowIdx = Math.floor(posInPage / cols);
+                    const x = startX + colIdx * (cardW + gapX), y = startY + rowIdx * (cardH + gapY);
 
                     const tr = barisTarget[i];
                     const index = tr.getAttribute('data-index');
@@ -2224,41 +2091,26 @@
                     const wrapper = document.getElementById(`qr-db-${index}`);
                     let canvas = wrapper ? wrapper.querySelector('canvas') : null;
 
-                    doc.setFillColor(79, 70, 229);
-                    doc.rect(x, y, cardW, is4x6 ? 6.5 : 4.5, 'F');
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(is4x6 ? 8.5 : 6.5);
-                    doc.setTextColor(255, 255, 255);
+                    doc.setFillColor(79, 70, 229); doc.rect(x, y, cardW, is4x6 ? 6.5 : 4.5, 'F');
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(is4x6 ? 8.5 : 6.5); doc.setTextColor(255, 255, 255);
                     doc.text(`KELAS ${kelas}`, x + cardW / 2, y + (is4x6 ? 4.5 : 3.1), { align: 'center' });
 
-                    doc.setDrawColor(148, 163, 184);
-                    doc.setLineWidth(0.25);
-                    doc.setLineDashPattern([1.5, 1.5], 0);
-                    doc.rect(x, y, cardW, cardH, 'S');
-                    doc.setLineDashPattern([], 0);
+                    doc.setDrawColor(148, 163, 184); doc.setLineWidth(0.25); doc.setLineDashPattern([1.5, 1.5], 0);
+                    doc.rect(x, y, cardW, cardH, 'S'); doc.setLineDashPattern([], 0);
 
-                    if (canvas) {
-                        doc.addImage(canvas.toDataURL('image/png'), 'PNG', x + (cardW - (is4x6 ? 32 : 22)) / 2, y + (is4x6 ? 9 : 5.8), is4x6 ? 32 : 22, is4x6 ? 32 : 22);
-                    }
+                    if (canvas) doc.addImage(canvas.toDataURL('image/png'), 'PNG', x + (cardW - (is4x6 ? 32 : 22)) / 2, y + (is4x6 ? 9 : 5.8), is4x6 ? 32 : 22, is4x6 ? 32 : 22);
 
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(is4x6 ? 8 : 6.2);
-                    doc.setTextColor(15, 23, 42);
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(is4x6 ? 8 : 6.2); doc.setTextColor(15, 23, 42);
                     const barisNama = doc.splitTextToSize(nama.toUpperCase(), cardW - 4).slice(0, 2);
                     doc.text(barisNama, x + cardW / 2, y + (is4x6 ? 46.5 : 31.2), { align: 'center', lineHeightFactor: 1.2 });
 
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(is4x6 ? 7.5 : 6);
-                    doc.setTextColor(71, 85, 105);
+                    doc.setFont('helvetica', 'normal'); doc.setFontSize(is4x6 ? 7.5 : 6); doc.setTextColor(71, 85, 105);
                     doc.text(`NIS: ${nis}`, x + cardW / 2, y + (is4x6 ? 56.5 : 38.2), { align: 'center' });
                 }
-                const namaFilePDF = kelasDipilih === 'Semua' ? `QR_Code_Siswa_${ukuranDipilih}_Semua_Kelas.pdf` : `QR_Code_Siswa_${ukuranDipilih}_Kelas_${kelasDipilih}.pdf`;
-                doc.save(namaFilePDF);
+                doc.save(kelasDipilih === 'Semua' ? `QR_Code_Siswa_${ukuranDipilih}_Semua_Kelas.pdf` : `QR_Code_Siswa_${ukuranDipilih}_Kelas_${kelasDipilih}.pdf`);
                 showToast('PDF Kartu QR Siswa berhasil diunduh.', 'success');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-                filterDataSiswa();
+                btn.disabled = false; btn.innerHTML = originalHTML; filterDataSiswa();
             }
         }
 
@@ -2269,10 +2121,10 @@
 
             const btn = document.getElementById('btnBulkDownloadQR');
             const originalHTML = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memproses ZIP...`;
+            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memproses ZIP...`;
 
             try {
+                await pastikanSemuaQRTerbuat(barisTarget, 'qr-db-');
                 const zip = new JSZip();
                 for (let i = 0; i < barisTarget.length; i++) {
                     const tr = barisTarget[i];
@@ -2287,39 +2139,28 @@
                         const labeledCanvas = buatCanvasQRDenganLabel(canvas, nis, nama, kelas);
                         const base64Data = labeledCanvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
                         const namaFile = `${String(i+1).padStart(2, '0')}_${nama.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_')}_${nis}.png`;
-                        if (kelasDipilih === 'Semua') {
-                            zip.folder(`Kelas_${kelas.replace(/[^a-zA-Z0-9_-]/g, '_')}`).file(namaFile, base64Data, { base64: true });
-                        } else {
-                            zip.file(namaFile, base64Data, { base64: true });
-                        }
+                        if (kelasDipilih === 'Semua') zip.folder(`Kelas_${kelas.replace(/[^a-zA-Z0-9_-]/g, '_')}`).file(namaFile, base64Data, { base64: true });
+                        else zip.file(namaFile, base64Data, { base64: true });
                     }
                 }
                 const zipBlob = await zip.generateAsync({ type: "blob" });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(zipBlob);
                 link.download = kelasDipilih === 'Semua' ? 'QR_Code_Siswa_Semua_Kelas.zip' : `QR_Code_Siswa_Kelas_${kelasDipilih}.zip`;
-                link.click();
-                URL.revokeObjectURL(link.href);
+                link.click(); URL.revokeObjectURL(link.href);
                 showToast('Arsip ZIP QR Siswa berhasil diunduh.', 'success');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-                filterDataSiswa();
+                btn.disabled = false; btn.innerHTML = originalHTML; filterDataSiswa();
             }
         }
 
-        // =========================================================================
-        // STATISTIK DASHBOARD & PROGRESS BAR
-        // =========================================================================
         function updateDashboardStats(dataAbsen) {
             const todayKey = formatDateKey(new Date());
-            const siswaHadirUnikHariIni = new Set();
-            const guruHadirUnikHariIni = new Set();
+            const siswaHadirUnikHariIni = new Set(), guruHadirUnikHariIni = new Set();
             const sevenDaysLabels = [], sevenDaysKeys = [], sevenDaysCounts = [];
 
             for (let d = 6; d >= 0; d--) {
-                const dt = new Date();
-                dt.setDate(dt.getDate() - d);
+                const dt = new Date(); dt.setDate(dt.getDate() - d);
                 sevenDaysKeys.push(formatDateKey(dt));
                 sevenDaysLabels.push(`${NAMA_HARI_PENDEK[dt.getDay()]} ${dt.getDate()}/${dt.getMonth() + 1}`);
                 sevenDaysCounts.push(new Set());
@@ -2335,17 +2176,12 @@
                 const tipeUser = dataAbsen[i][5] || (dataAbsen[i][3] === 'Guru' ? 'Guru' : 'Siswa');
 
                 if(dKey === todayKey) {
-                    if (tipeUser === 'Guru') {
-                        guruHadirUnikHariIni.add(idUnik);
-                    } else {
-                        siswaHadirUnikHariIni.add(idUnik);
-                    }
+                    if (tipeUser === 'Guru') guruHadirUnikHariIni.add(idUnik);
+                    else siswaHadirUnikHariIni.add(idUnik);
                 }
 
                 const idx7 = sevenDaysKeys.indexOf(dKey);
-                if (idx7 !== -1 && tipeUser !== 'Guru') {
-                    sevenDaysCounts[idx7].add(idUnik);
-                }
+                if (idx7 !== -1 && tipeUser !== 'Guru') sevenDaysCounts[idx7].add(idUnik);
             }
 
             const hadirSiswa = siswaHadirUnikHariIni.size;
@@ -2378,15 +2214,16 @@
             document.getElementById('sidebarOverlay').classList.toggle('hidden');
         }
 
-        function refreshData() { loadDataFromDatabase(); }
+        function refreshData() { loadDataFromDatabase(false); }
 
         function switchTab(tabId) {
+            activeTabId = tabId;
             const navConfig = {
-                'dashboard': { title: 'Dashboard Kehadiran', icon: 'fa-chart-pie', label: 'Dashboard Utama' },
-                'logabsen': { title: 'Riwayat Kehadiran', icon: 'fa-list-check', label: 'Log Kehadiran' },
-                'rekap': { title: 'Rekap & Laporan Absensi', icon: 'fa-calendar-check', label: 'Rekap & Laporan' },
-                'siswa': { title: 'Database Siswa & QR Code', icon: 'fa-user-graduate', label: 'Data Siswa & QR' },
-                'guru': { title: 'Database Guru & ID Card', icon: 'fa-chalkboard-user', label: 'Data Guru & QR' }
+                'dashboard': { title: 'Dashboard Kehadiran' },
+                'logabsen': { title: 'Riwayat Kehadiran' },
+                'rekap': { title: 'Rekap & Laporan Absensi' },
+                'siswa': { title: 'Database Siswa & QR Code' },
+                'guru': { title: 'Database Guru & ID Card' }
             };
 
             ['dashboard', 'logabsen', 'rekap', 'siswa', 'guru'].forEach(t => {
@@ -2398,8 +2235,16 @@
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
             const activeBtn = document.getElementById(`nav-${tabId}`);
             activeBtn.className = "w-full flex items-center justify-between text-left py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/25 font-semibold text-sm transition-all duration-200";
-            
             document.getElementById('pageTitle').innerText = navConfig[tabId].title;
+
+            // Render tabel Siswa / Guru hanya saat tab-nya diklik pertama kali
+            if (tabId === 'siswa' && !qrSiswaRendered && masterDataSiswa.length > 0) {
+                renderTableSiswa(masterDataSiswa);
+                qrSiswaRendered = true;
+            } else if (tabId === 'guru' && !qrGuruRendered && masterDataGuru.length > 0) {
+                renderTableGuru(masterDataGuru);
+                qrGuruRendered = true;
+            }
             
             if (window.innerWidth < 768 && !document.getElementById('sidebar').classList.contains('-translate-x-full')) {
                 toggleSidebar();
@@ -2420,8 +2265,7 @@
             document.getElementById('siswaTableBody').insertBefore(tr, document.getElementById('siswaTableBody').firstChild);
             
             updatePendingSaveBadge();
-            showToast(`Siswa ${nama} masuk antrean. Klik "Simpan Antrean" di atas.`, 'info');
-            
+            showToast(`Siswa ${nama} masuk antrean.`, 'info');
             document.getElementById('inputNIS').value = '';
             document.getElementById('inputNama').value = '';
             document.getElementById('inputKelas').value = '';
@@ -2440,7 +2284,7 @@
                 });
                 if (count > 0) {
                     updatePendingSaveBadge();
-                    showToast(`${count} data siswa masuk antrean. Klik tombol hijau "Simpan Antrean" di kanan atas.`, 'success');
+                    showToast(`${count} data siswa masuk antrean. Klik "Simpan Antrean".`, 'success');
                 }
                 document.getElementById('csvFile').value = ''; 
             }});
@@ -2460,9 +2304,7 @@
                         body: JSON.stringify({ aksi: 'import_siswa', siswaList: globalSiswaList }) 
                     });
                     const dataSiswa = await resSiswa.json();
-                    if (dataSiswa.status !== 'success') {
-                        throw new Error(dataSiswa.message || 'Gagal menyimpan data siswa.');
-                    }
+                    if (dataSiswa.status !== 'success') throw new Error(dataSiswa.message || 'Gagal menyimpan data siswa.');
                     globalSiswaList = [];
                 }
 
@@ -2473,25 +2315,19 @@
                         body: JSON.stringify({ aksi: 'import_guru', guruList: globalGuruList }) 
                     });
                     const dataGuru = await resGuru.json();
-                    if (dataGuru.status !== 'success') {
-                        throw new Error(dataGuru.message || 'Gagal menyimpan data guru.');
-                    }
+                    if (dataGuru.status !== 'success') throw new Error(dataGuru.message || 'Gagal menyimpan data guru.');
                     globalGuruList = [];
                 }
 
-                showToast('Berhasil menyimpan seluruh antrean data ke Google Spreadsheet!', 'success');
+                showToast('Berhasil menyimpan seluruh antrean ke Google Spreadsheet!', 'success');
                 updatePendingSaveBadge();
                 refreshData();
-
             } catch (err) {
-                console.error('Detail Error:', err);
                 showToast('Gagal menyimpan: ' + err.message, 'error');
             } finally { 
-                btn.innerHTML = originalHTML; 
-                btn.disabled = false; 
-                updatePendingSaveBadge();
+                btn.innerHTML = originalHTML; btn.disabled = false; updatePendingSaveBadge();
             }
         }
     </script>
-</body>
+   </body>
 </html>
