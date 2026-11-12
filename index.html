@@ -14,7 +14,7 @@
     <!-- Library jsPDF & AutoTable untuk Cetak PDF QR & Laporan Rekap -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <!-- Library SheetJS (XLSX) untuk Download Rekap Excel -->
+    <!-- Library SheetJS (XLSX) untuk Download Rekap Excel & Backup -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -62,7 +62,7 @@
         }
 
         @media print {
-            aside, header, #loginScreen, #sidebarOverlay, #actionButtonsWrapper, #manualAddModal, #manualAddGuruModal, #qrPreviewModal, #toastContainer, .no-print, .action-tools { display: none !important; }
+            aside, header, #loginScreen, #sidebarOverlay, #actionButtonsWrapper, #manualAddModal, #manualAddGuruModal, #qrPreviewModal, #confirmModal, #toastContainer, .no-print, .action-tools { display: none !important; }
             main { padding: 0 !important; margin: 0 !important; background: white !important; }
             .shadow-sm { box-shadow: none !important; }
         }
@@ -95,7 +95,7 @@
                             <i class="fa-solid fa-qrcode"></i>
                         </div>
                         <div class="text-left">
-                            <span class="font-extrabold tracking-tight text-sm block leading-none">Satui Presensi/span>
+                            <span class="font-extrabold tracking-tight text-sm block leading-none">Satui Presensi</span>
                             <span class="text-[10px] text-indigo-200 font-medium">Cloud Attendance System</span>
                         </div>
                     </div>
@@ -184,7 +184,7 @@
                         <span id="loginPreloadDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                         <span id="loginPreloadStatus">Menyiapkan data di latar belakang...</span>
                     </span>
-                    <span>v2.5 Enterprise</span>
+                    <span>v2.6 Enterprise</span>
                 </div>
             </div>
         </div>
@@ -265,6 +265,18 @@
                 </div>
                 <span id="badgeCountGuru" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">0</span>
             </button>
+
+            <div class="pt-4 pb-1 px-2.5">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Pemeliharaan Sistem</span>
+            </div>
+
+            <button onclick="switchTab('backup')" id="nav-backup" class="w-full flex items-center justify-between text-left py-3 px-4 rounded-xl hover:bg-slate-900 hover:text-white transition-all duration-200 text-slate-400 font-medium text-sm group">
+                <div class="flex items-center gap-3.5">
+                    <i class="fa-solid fa-database w-5 text-center text-base group-hover:text-indigo-400 transition-colors"></i>
+                    <span>Backup & Restore Data</span>
+                </div>
+                <i class="fa-solid fa-shield-halved text-[11px] text-emerald-400 opacity-80"></i>
+            </button>
         </nav>
         
         <!-- Sidebar Footer Status & Tombol Logout -->
@@ -313,6 +325,12 @@
                     <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">WITA</span>
                 </div>
 
+                <!-- Pintasan Cepat Backup JSON -->
+                <button onclick="backupSemuaDataJSON()" title="Backup Cepat Seluruh Database (.json)" class="no-print hidden sm:flex items-center gap-2 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200/80 px-3.5 py-2.5 rounded-xl transition-all duration-200 font-semibold text-xs">
+                    <i class="fa-solid fa-download text-indigo-500"></i>
+                    <span class="hidden xl:inline">Backup Cepat</span>
+                </button>
+
                 <!-- Tombol Simpan Antrean -->
                 <button onclick="simpanKeDatabase()" id="btnSave" class="hidden no-print flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/25 transition-all duration-200 font-bold text-xs md:text-sm animate-bounce">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -344,11 +362,11 @@
                                 <i class="fa-solid fa-bolt text-amber-400"></i> Pemantauan Real-Time
                             </span>
                             <h3 class="text-xl md:text-2xl font-extrabold tracking-tight">Ringkasan Presensi Hari Ini</h3>
-                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran siswa dan dewan guru secara langsung, kelola kartu QR/RFID, dan unduh laporan rekapitulasi berkala.</p>
+                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran siswa dan dewan guru secara langsung, kelola kartu QR/RFID, serta cadangkan seluruh database sekolah dengan aman.</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5">
-                            <button onclick="switchTab('logabsen')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/15 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
-                                <i class="fa-solid fa-list-check"></i> Cek Log Masuk
+                            <button onclick="switchTab('backup')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/15 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
+                                <i class="fa-solid fa-database"></i> Backup & Restore
                             </button>
                             <button onclick="switchTab('rekap')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all">
                                 <i class="fa-solid fa-file-export"></i> Buka Rekapitulasi
@@ -647,7 +665,7 @@
             </div>
 
             <!-- ========================================================= -->
-            <!-- TAB 4: DATA SISWA & QR                                    -->
+            <!-- TAB 4: DATA SISWA & QR (DILENGKAPI HAPUS PERSISWA & SEMUA) -->
             <!-- ========================================================= -->
             <div id="tab-siswa" class="hidden space-y-6 tab-animate">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
@@ -658,7 +676,7 @@
                                     <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-user-graduate"></i></span>
                                     Database Siswa & Kartu QR
                                 </h3>
-                                <p class="text-xs text-slate-500 mt-1">Klik pada gambar QR Code untuk memperbesar tampilan ke layar penuh</p>
+                                <p class="text-xs text-slate-500 mt-1">Klik pada gambar QR Code untuk memperbesar tampilan, atau gunakan tombol aksi untuk mengelola data siswa</p>
                             </div>
                             <div id="actionButtonsWrapper" class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
                                 <button onclick="toggleManualForm()" class="flex-1 md:flex-initial bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-600/20">
@@ -670,6 +688,10 @@
                                         <i class="fa-solid fa-file-csv text-emerald-600"></i> Import CSV
                                     </div>
                                 </div>
+                                <!-- Tombol Hapus Semua Siswa -->
+                                <button onclick="konfirmasiHapusSemuaSiswa()" class="flex-1 md:flex-initial bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 font-semibold py-2.5 px-4 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all shadow-sm" title="Kosongkan Seluruh Data Siswa">
+                                    <i class="fa-solid fa-trash-can"></i> Hapus Semua Siswa
+                                </button>
                             </div>
                         </div>
 
@@ -682,6 +704,10 @@
                                 <select id="filterKelasSiswa" onchange="filterDataSiswa()" class="border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white font-semibold text-slate-700">
                                     <option value="Semua">Semua Kelas</option>
                                 </select>
+                                <!-- Tombol Hapus Per Kelas (Muncul saat filter kelas aktif) -->
+                                <button id="btnHapusPerKelas" onclick="konfirmasiHapusKelasSiswa()" class="hidden bg-amber-50 hover:bg-amber-600 text-amber-700 hover:text-white border border-amber-200 font-semibold px-3.5 py-2 rounded-xl text-xs md:text-sm flex items-center justify-center gap-1.5 transition-all">
+                                    <i class="fa-solid fa-users-slash"></i> <span id="labelHapusKelas">Hapus Kelas</span>
+                                </button>
                             </div>
 
                             <div class="flex flex-col sm:flex-row flex-wrap gap-2.5 items-stretch sm:items-center">
@@ -712,10 +738,11 @@
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Nama Lengkap Siswa</th>
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Kelas</th>
                                     <th class="px-5 py-3.5 text-center text-[11px] font-bold uppercase tracking-wider">Kartu QR Code</th>
+                                    <th class="px-5 py-3.5 text-center text-[11px] font-bold uppercase tracking-wider w-24">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="siswaTableBody" class="divide-y divide-slate-100">
-                                <tr id="loadingSiswa"><td colspan="5" class="px-6 py-16 text-center"><p class="text-slate-400 text-sm">Memuat database siswa...</p></td></tr>
+                                <tr id="loadingSiswa"><td colspan="6" class="px-6 py-16 text-center"><p class="text-slate-400 text-sm">Memuat database siswa...</p></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -746,6 +773,9 @@
                                         <i class="fa-solid fa-file-csv text-emerald-600"></i> Import CSV Guru
                                     </div>
                                 </div>
+                                <button onclick="konfirmasiHapusSemuaGuru()" class="flex-1 md:flex-initial bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 font-semibold py-2.5 px-4 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all shadow-sm">
+                                    <i class="fa-solid fa-trash-can"></i> Hapus Semua Guru
+                                </button>
                             </div>
                         </div>
 
@@ -780,17 +810,153 @@
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Nama Lengkap & Gelar</th>
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">UID RFID</th>
                                     <th class="px-5 py-3.5 text-center text-[11px] font-bold uppercase tracking-wider">Kartu QR Code</th>
+                                    <th class="px-5 py-3.5 text-center text-[11px] font-bold uppercase tracking-wider w-24">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="guruTableBody" class="divide-y divide-slate-100">
-                                <tr id="loadingGuru"><td colspan="5" class="px-6 py-16 text-center"><p class="text-slate-400 text-sm">Memuat database guru...</p></td></tr>
+                                <tr id="loadingGuru"><td colspan="6" class="px-6 py-16 text-center"><p class="text-slate-400 text-sm">Memuat database guru...</p></td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
+            <!-- ========================================================= -->
+            <!-- TAB 6: BACKUP & RESTORE SEMUA DATA                        -->
+            <!-- ========================================================= -->
+            <div id="tab-backup" class="hidden space-y-6 tab-animate">
+                <!-- Header Info Backup -->
+                <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 text-white p-6 md:p-7 rounded-2xl shadow-lg border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 mb-2.5">
+                            <i class="fa-solid fa-shield-halved"></i> Keamanan & Pemulihan Data
+                        </span>
+                        <h3 class="text-xl md:text-2xl font-extrabold tracking-tight">Pusat Backup & Restore Database</h3>
+                        <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-2xl">Cadangkan seluruh data (Siswa, Guru, dan Riwayat Absensi) ke komputer Anda dalam satu file utuh, atau pulihkan kembali database kapan saja.</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 text-xs space-y-1.5 min-w-[220px]">
+                        <div class="flex justify-between"><span class="text-slate-300">Total Siswa:</span><span id="backupStatSiswa" class="font-bold text-white">0 Data</span></div>
+                        <div class="flex justify-between"><span class="text-slate-300">Total Guru:</span><span id="backupStatGuru" class="font-bold text-white">0 Data</span></div>
+                        <div class="flex justify-between"><span class="text-slate-300">Total Log Absen:</span><span id="backupStatLog" class="font-bold text-emerald-300">0 Data</span></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- KARTU KIRI: BACKUP / EKSPOR SEMUA DATA -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between space-y-5">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                            </div>
+                            <h4 class="text-lg font-extrabold text-slate-900">Backup Semua Data (Unduh Cadangan)</h4>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                Unduh salinan lengkap seluruh database <strong>SMP Negeri 1 Satui</strong> yang mencakup tabel <strong>Data Siswa</strong>, <strong>Data Guru</strong>, dan <strong>Log Kehadiran</strong>. Disarankan melakukan backup rutin setiap akhir bulan atau semester.
+                            </p>
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2 text-xs text-slate-600">
+                                <div class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> Pilihan Format File Backup:</div>
+                                <p>&bull; <strong>Format JSON (.json):</strong> Format standar sistem untuk proses <em>Import / Restore</em> tercepat & akurat.</p>
+                                <p>&bull; <strong>Format Excel (.xlsx):</strong> Berisi 3 Sheet sekaligus (<code>Data_Siswa</code>, <code>Data_Guru</code>, <code>Log_Absen</code>) yang bisa dibuka di Microsoft Excel dan juga mendukung proses Import kembali.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
+                            <button onclick="backupSemuaDataJSON()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 transition-all">
+                                <i class="fa-solid fa-file-code"></i> Backup Full (.JSON)
+                            </button>
+                            <button onclick="backupSemuaDataExcel()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all">
+                                <i class="fa-solid fa-file-excel"></i> Backup Full (.XLSX)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KARTU KANAN: IMPORT / RESTORE SEMUA DATA -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between space-y-5">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                            </div>
+                            <h4 class="text-lg font-extrabold text-slate-900">Import / Restore Semua Data</h4>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                Pulihkan atau masukkan seluruh data dari file cadangan (<code>.json</code> atau <code>.xlsx</code> hasil backup). Anda dapat memilih untuk menggabungkan data baru atau menimpa (reset) seluruh isi database.
+                            </p>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Mode Pemulihan (Import Mode)</label>
+                                <select id="modeImportBackup" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs md:text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none focus:border-indigo-500">
+                                    <option value="replace" selected>Timpa & Pulihkan Semua (Ganti Seluruh Database dengan File Backup)</option>
+                                    <option value="merge">Gabungkan Data (Tambahkan Data yang Belum Ada tanpa Menghapus Data Lama)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Pilih File Cadangan (.json atau .xlsx)</label>
+                                <input type="file" id="inputFileRestoreAll" accept=".json,.xlsx,.xls" onchange="pratinjauFileRestore(event)" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl p-1.5 bg-white cursor-pointer" />
+                            </div>
+
+                            <!-- Kotak Pratinjau File sebelum dieksekusi -->
+                            <div id="boxPreviewRestore" class="hidden p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-950 space-y-1">
+                                <p class="font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-file-circle-check text-indigo-600"></i> <span id="namaFileRestorePreview">-</span></p>
+                                <p id="detailFileRestorePreview" class="text-[11px] text-indigo-800 font-medium">-</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100">
+                            <button id="btnEksekusiRestore" onclick="prosesImportSemuaData()" disabled class="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-3 px-4 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-600/20 disabled:shadow-none transition-all">
+                                <i class="fa-solid fa-rotate"></i> Proses Import & Sinkronkan Semua Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZONA BERBAHAYA: HAPUS KESELURUHAN DATABASE -->
+                <div class="bg-rose-50/60 border border-rose-200/80 p-5 md:p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg flex-shrink-0 mt-0.5">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-sm md:text-base text-rose-950">Zona Berbahaya: Pengosongan Database</h4>
+                            <p class="text-xs text-rose-800/80 mt-0.5 max-w-2xl">Gunakan tombol di samping untuk menghapus keseluruhan data siswa atau mereset seluruh database sekolah (Siswa, Guru, dan Log Absen) pada pergantian tahun ajaran baru.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2.5 w-full md:w-auto">
+                        <button onclick="konfirmasiHapusSemuaSiswa()" class="flex-1 md:flex-initial bg-white hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 font-bold px-4 py-2.5 rounded-xl text-xs transition-all">
+                            <i class="fa-solid fa-user-slash mr-1"></i> Kosongkan Data Siswa
+                        </button>
+                        <button onclick="konfirmasiResetSeluruhDatabase()" class="flex-1 md:flex-initial bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-sm shadow-rose-600/20 transition-all">
+                            <i class="fa-solid fa-bomb mr-1"></i> Reset Seluruh Database
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </main>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL KONFIRMASI TINDAKAN PENTING (HAPUS / RESTORE)        -->
+    <!-- ========================================================= -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full transform transition-all">
+            <div class="flex items-center gap-3.5 mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl flex-shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 id="confirmModalTitle" class="font-extrabold text-lg text-slate-900">Konfirmasi Penghapusan</h3>
+                    <p class="text-xs text-slate-500">Tindakan ini akan memperbarui database utama</p>
+                </div>
+            </div>
+            <p id="confirmModalMessage" class="text-xs md:text-sm text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 mb-6">-</p>
+            <div class="flex justify-end gap-2.5">
+                <button onclick="tutupConfirmModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs md:text-sm transition-colors">
+                    Batal
+                </button>
+                <button id="btnConfirmAction" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs md:text-sm shadow-md shadow-rose-600/20 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-trash-can"></i> <span>Ya, Lanjutkan</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ========================================================= -->
@@ -908,6 +1074,7 @@
         let qrSiswaRendered = false;
         let qrGuruRendered = false;
         let activeTabId = 'dashboard';
+        let parsedRestorePayload = null;
 
         let currentRekapResult = {
             judul: '',
@@ -961,7 +1128,7 @@
             } else {
                 errorAlert.classList.remove('hidden');
                 loginCard.classList.remove('animate-shake');
-                void loginCard.offsetWidth; // Trigger reflow untuk mengulang animasi shake
+                void loginCard.offsetWidth;
                 loginCard.classList.add('animate-shake');
                 document.getElementById('loginPassword').select();
             }
@@ -1006,12 +1173,44 @@
             inisialisasiFilterDefaultRekap();
             initChart();
             
-            // 1. MUAT INSTAN DARI CACHE LOKAL (0.1 Detik)
+            // 1. MUAT INSTAN DARI CACHE LOKAL
             muatDariCacheLokal();
             
             // 2. SINKRONISASI LATAR BELAKANG DARI SERVER GOOGLE SHEETS
             loadDataFromDatabase(true);
         });
+
+        function simpanCacheLokal() {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    siswa: masterDataSiswa,
+                    guru: masterDataGuru,
+                    absen: masterDataAbsen,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {
+                console.warn('Gagal menyimpan cache lokal:', e);
+            }
+        }
+
+        function perbaruiSeluruhTampilanUI() {
+            qrSiswaRendered = false;
+            qrGuruRendered = false;
+
+            hitungTotalPesertaCepat();
+            ekstrakKelasUnik(masterDataSiswa);
+            updateDashboardStats(masterDataAbsen);
+            renderLogAbsen(masterDataAbsen);
+            prosesRekapAbsensi();
+
+            if (activeTabId === 'siswa') {
+                renderTableSiswa(masterDataSiswa);
+                qrSiswaRendered = true;
+            } else if (activeTabId === 'guru') {
+                renderTableGuru(masterDataGuru);
+                qrGuruRendered = true;
+            }
+        }
 
         function muatDariCacheLokal() {
             try {
@@ -1019,15 +1218,11 @@
                 if (!rawCache) return;
                 const cached = JSON.parse(rawCache);
                 if (cached && cached.siswa && cached.absen) {
-                    masterDataSiswa = cached.siswa || [];
-                    masterDataGuru = cached.guru || [];
-                    masterDataAbsen = cached.absen || [];
+                    masterDataSiswa = cached.siswa || [['NIS', 'Nama', 'Kelas']];
+                    masterDataGuru = cached.guru || [['NIP', 'Nama', 'RFID']];
+                    masterDataAbsen = cached.absen || [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
                     
-                    hitungTotalPesertaCepat();
-                    ekstrakKelasUnik(masterDataSiswa);
-                    updateDashboardStats(masterDataAbsen);
-                    renderLogAbsen(masterDataAbsen);
-                    prosesRekapAbsensi();
+                    perbaruiSeluruhTampilanUI();
 
                     const syncText = document.getElementById('syncStatusText');
                     if (syncText) {
@@ -1058,6 +1253,14 @@
             totalGuruDatabase = countG;
             const badgeGuru = document.getElementById('badgeCountGuru');
             if (badgeGuru) badgeGuru.innerText = totalGuruDatabase;
+
+            const totalLog = Math.max(0, (masterDataAbsen ? masterDataAbsen.length - 1 : 0));
+            const bSiswa = document.getElementById('backupStatSiswa');
+            const bGuru = document.getElementById('backupStatGuru');
+            const bLog = document.getElementById('backupStatLog');
+            if (bSiswa) bSiswa.innerText = `${totalSiswaDatabase} Data`;
+            if (bGuru) bGuru.innerText = `${totalGuruDatabase} Data`;
+            if (bLog) bLog.innerText = `${totalLog} Data`;
         }
 
         function showToast(message, type = 'info') {
@@ -1087,6 +1290,455 @@
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
+        }
+
+        // =========================================================================
+        // MODAL KONFIRMASI UNIVERSAL
+        // =========================================================================
+        function bukaConfirmModal(judul, pesan, labelTombol, callbackFn) {
+            document.getElementById('confirmModalTitle').innerText = judul;
+            document.getElementById('confirmModalMessage').innerHTML = pesan;
+            const btn = document.getElementById('btnConfirmAction');
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>${labelTombol}</span>`;
+            btn.onclick = async () => {
+                tutupConfirmModal();
+                await callbackFn();
+            };
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function tutupConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        // =========================================================================
+        // FITUR HAPUS DATA SISWA (PER SISWA, PER KELAS, & KESELURUHAN)
+        // =========================================================================
+        function konfirmasiHapusSatuSiswa(index, nis, nama, kelas) {
+            bukaConfirmModal(
+                'Hapus Data Siswa',
+                `Apakah Anda yakin ingin menghapus data siswa <strong>${nama}</strong> (NIS: <code>${nis}</code> - Kelas ${kelas}) dari database?`,
+                'Hapus Siswa',
+                async () => {
+                    await eksekusiHapusSatuSiswa(index, nis, nama);
+                }
+            );
+        }
+
+        async function eksekusiHapusSatuSiswa(index, nis, nama) {
+            // 1. Hapus dari array lokal berdasarkan index atau kecocokan NIS+Nama
+            if (index >= 1 && index < masterDataSiswa.length && bersihkanID(masterDataSiswa[index][0]) === bersihkanID(nis)) {
+                masterDataSiswa.splice(index, 1);
+            } else {
+                masterDataSiswa = masterDataSiswa.filter((row, idx) => {
+                    if (idx === 0) return true;
+                    return !(bersihkanID(row[0]) === bersihkanID(nis) && (row[1] || '').toString().trim() === nama.trim());
+                });
+            }
+
+            simpanCacheLokal();
+            perbaruiSeluruhTampilanUI();
+            showToast(`Data siswa "${nama}" berhasil dihapus.`, 'success');
+
+            // 2. Sinkronkan penghapusan ke Google Sheets
+            try {
+                await fetch(URL_WEB_APP, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ aksi: 'hapus_siswa', nis: nis, nama: nama })
+                });
+            } catch (e) {
+                console.warn('Sinkronisasi hapus_siswa ke server:', e);
+            }
+        }
+
+        function konfirmasiHapusKelasSiswa() {
+            const kelas = document.getElementById('filterKelasSiswa').value;
+            if (kelas === 'Semua') return;
+
+            bukaConfirmModal(
+                `Hapus Seluruh Siswa Kelas ${kelas}`,
+                ` Anda akan menghapus seluruh siswa yang berada di <strong>Kelas ${kelas}</strong>. Pastikan Anda telah melakukan Backup data terlebih dahulu. Lanjutkan?`,
+                `Hapus Kelas ${kelas}`,
+                async () => {
+                    masterDataSiswa = masterDataSiswa.filter((row, idx) => {
+                        if (idx === 0) return true;
+                        return (row[2] || '').toString().trim() !== kelas;
+                    });
+                    document.getElementById('filterKelasSiswa').value = 'Semua';
+                    simpanCacheLokal();
+                    perbaruiSeluruhTampilanUI();
+                    showToast(`Seluruh data siswa Kelas ${kelas} telah dihapus.`, 'success');
+
+                    try {
+                        await fetch(URL_WEB_APP, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ aksi: 'hapus_kelas_siswa', kelas: kelas, siswaMatrix: masterDataSiswa })
+                        });
+                    } catch (e) {}
+                }
+            );
+        }
+
+        function konfirmasiHapusSemuaSiswa() {
+            if (totalSiswaDatabase === 0 && globalSiswaList.length === 0) {
+                return showToast('Database siswa saat ini sudah kosong.', 'warning');
+            }
+            bukaConfirmModal(
+                'Hapus Seluruh Data Siswa',
+                `Tindakan ini akan <strong>mengosongkan seluruh daftar siswa (${totalSiswaDatabase} siswa)</strong> dari sistem dan Google Spreadsheet. Sangat disarankan mengunduh <strong>Backup Data</strong> terlebih dahulu.`,
+                'Kosongkan Semua Siswa',
+                async () => {
+                    await eksekusiHapusSemuaSiswa();
+                }
+            );
+        }
+
+        async function eksekusiHapusSemuaSiswa() {
+            const headerSiswa = (masterDataSiswa && masterDataSiswa.length > 0) ? masterDataSiswa[0] : ['NIS', 'Nama', 'Kelas'];
+            masterDataSiswa = [headerSiswa];
+            globalSiswaList = [];
+
+            updatePendingSaveBadge();
+            simpanCacheLokal();
+            perbaruiSeluruhTampilanUI();
+            showToast('Seluruh data siswa berhasil dikosongkan.', 'success');
+
+            try {
+                await fetch(URL_WEB_APP, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ aksi: 'hapus_semua_siswa' })
+                });
+            } catch (e) {
+                console.warn('Sinkronisasi hapus_semua_siswa ke server:', e);
+            }
+        }
+
+        // =========================================================================
+        // FITUR HAPUS DATA GURU (PER GURU & KESELURUHAN)
+        // =========================================================================
+        function konfirmasiHapusSatuGuru(index, nip, nama) {
+            bukaConfirmModal(
+                'Hapus Data Guru',
+                `Apakah Anda yakin ingin menghapus data guru <strong>${nama}</strong> (NIP: <code>${nip}</code>) dari database?`,
+                'Hapus Guru',
+                async () => {
+                    if (index >= 1 && index < masterDataGuru.length && bersihkanID(masterDataGuru[index][0]) === bersihkanID(nip)) {
+                        masterDataGuru.splice(index, 1);
+                    } else {
+                        masterDataGuru = masterDataGuru.filter((row, idx) => {
+                            if (idx === 0) return true;
+                            return !(bersihkanID(row[0]) === bersihkanID(nip) && (row[1] || '').toString().trim() === nama.trim());
+                        });
+                    }
+                    simpanCacheLokal();
+                    perbaruiSeluruhTampilanUI();
+                    showToast(`Data guru "${nama}" berhasil dihapus.`, 'success');
+
+                    try {
+                        await fetch(URL_WEB_APP, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ aksi: 'hapus_guru', nip: nip, nama: nama })
+                        });
+                    } catch (e) {}
+                }
+            );
+        }
+
+        function konfirmasiHapusSemuaGuru() {
+            if (totalGuruDatabase === 0 && globalGuruList.length === 0) {
+                return showToast('Database guru saat ini sudah kosong.', 'warning');
+            }
+            bukaConfirmModal(
+                'Hapus Seluruh Data Guru',
+                `Tindakan ini akan <strong>mengosongkan seluruh daftar dewan guru (${totalGuruDatabase} guru)</strong> dari sistem. Lanjutkan?`,
+                'Kosongkan Semua Guru',
+                async () => {
+                    const headerGuru = (masterDataGuru && masterDataGuru.length > 0) ? masterDataGuru[0] : ['NIP', 'Nama', 'RFID'];
+                    masterDataGuru = [headerGuru];
+                    globalGuruList = [];
+                    updatePendingSaveBadge();
+                    simpanCacheLokal();
+                    perbaruiSeluruhTampilanUI();
+                    showToast('Seluruh data guru berhasil dikosongkan.', 'success');
+
+                    try {
+                        await fetch(URL_WEB_APP, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ aksi: 'hapus_semua_guru' })
+                        });
+                    } catch (e) {}
+                }
+            );
+        }
+
+        function konfirmasiResetSeluruhDatabase() {
+            bukaConfirmModal(
+                'Reset Seluruh Database Sekolah',
+                `<strong>PERINGATAN KERAS:</strong> Anda akan menghapus <strong>Seluruh Data Siswa, Data Guru, dan Riwayat Log Kehadiran</strong> sekaligus. Pastikan Anda sudah menekan tombol <strong>Backup Full</strong> sebelum melanjutkan!`,
+                'Ya, Reset Seluruh Database',
+                async () => {
+                    masterDataSiswa = [['NIS', 'Nama', 'Kelas']];
+                    masterDataGuru = [['NIP', 'Nama', 'RFID']];
+                    masterDataAbsen = [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+                    globalSiswaList = [];
+                    globalGuruList = [];
+
+                    updatePendingSaveBadge();
+                    simpanCacheLokal();
+                    perbaruiSeluruhTampilanUI();
+                    showToast('Seluruh database berhasil direset ke kondisi kosong.', 'success');
+
+                    try {
+                        await fetch(URL_WEB_APP, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ aksi: 'hapus_semua_data' })
+                        });
+                    } catch (e) {}
+                }
+            );
+        }
+
+        // =========================================================================
+        // FITUR BACKUP & IMPORT (RESTORE) SEMUA DATA (.JSON & .XLSX)
+        // =========================================================================
+        function backupSemuaDataJSON() {
+            const now = new Date();
+            const tglStr = formatDateKey(now);
+            const payloadBackup = {
+                app: "EduAbsen SMPN 1 Satui",
+                version: "2.6",
+                exportedAt: now.toISOString(),
+                stats: {
+                    totalSiswa: totalSiswaDatabase,
+                    totalGuru: totalGuruDatabase,
+                    totalLogAbsen: Math.max(0, masterDataAbsen.length - 1)
+                },
+                data: {
+                    siswa: masterDataSiswa.length > 0 ? masterDataSiswa : [['NIS', 'Nama', 'Kelas']],
+                    guru: masterDataGuru.length > 0 ? masterDataGuru : [['NIP', 'Nama', 'RFID']],
+                    absen: masterDataAbsen.length > 0 ? masterDataAbsen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']]
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(payloadBackup, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Backup_EduAbsen_SMPN1Satui_${tglStr}.json`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+
+            showToast('File Backup JSON seluruh database berhasil diunduh.', 'success');
+        }
+
+        function backupSemuaDataExcel() {
+            const now = new Date();
+            const tglStr = formatDateKey(now);
+            const wb = XLSX.utils.book_new();
+
+            const sheetSiswa = XLSX.utils.aoa_to_sheet(masterDataSiswa.length > 0 ? masterDataSiswa : [['NIS', 'Nama', 'Kelas']]);
+            const sheetGuru = XLSX.utils.aoa_to_sheet(masterDataGuru.length > 0 ? masterDataGuru : [['NIP', 'Nama', 'RFID']]);
+            const sheetAbsen = XLSX.utils.aoa_to_sheet(masterDataAbsen.length > 0 ? masterDataAbsen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']]);
+
+            XLSX.utils.book_append_sheet(wb, sheetSiswa, 'Data_Siswa');
+            XLSX.utils.book_append_sheet(wb, sheetGuru, 'Data_Guru');
+            XLSX.utils.book_append_sheet(wb, sheetAbsen, 'Log_Absen');
+
+            XLSX.writeFile(wb, `Backup_EduAbsen_SMPN1Satui_${tglStr}.xlsx`);
+            showToast('File Backup Excel (3 Sheet Lengkap) berhasil diunduh.', 'success');
+        }
+
+        function pratinjauFileRestore(event) {
+            const file = event.target.files[0];
+            const boxPreview = document.getElementById('boxPreviewRestore');
+            const btnRestore = document.getElementById('btnEksekusiRestore');
+            parsedRestorePayload = null;
+
+            if (!file) {
+                boxPreview.classList.add('hidden');
+                btnRestore.disabled = true;
+                return;
+            }
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'json') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        const d = json.data || json;
+                        const s = Array.isArray(d.siswa) ? d.siswa : [['NIS', 'Nama', 'Kelas']];
+                        const g = Array.isArray(d.guru) ? d.guru : [['NIP', 'Nama', 'RFID']];
+                        const a = Array.isArray(d.absen) ? d.absen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+
+                        parsedRestorePayload = { siswa: s, guru: g, absen: a };
+                        tampilkanRingkasanRestore(file.name, s.length - 1, g.length - 1, a.length - 1);
+                    } catch (err) {
+                        showToast('Format file JSON tidak valid!', 'error');
+                        boxPreview.classList.add('hidden');
+                        btnRestore.disabled = true;
+                    }
+                };
+                reader.readAsText(file);
+            } else if (ext === 'xlsx' || ext === 'xls') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        const ambilSheet = (namaKandidat, defaultHeader) => {
+                            const foundName = workbook.SheetNames.find(n => namaKandidat.some(k => n.toLowerCase().includes(k)));
+                            if (!foundName) return [defaultHeader];
+                            const aoa = XLSX.utils.sheet_to_json(workbook.Sheets[foundName], { header: 1, defval: '' });
+                            return aoa.length > 0 ? aoa : [defaultHeader];
+                        };
+
+                        const s = ambilSheet(['siswa'], ['NIS', 'Nama', 'Kelas']);
+                        const g = ambilSheet(['guru'], ['NIP', 'Nama', 'RFID']);
+                        const a = ambilSheet(['absen', 'log'], ['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']);
+
+                        parsedRestorePayload = { siswa: s, guru: g, absen: a };
+                        tampilkanRingkasanRestore(file.name, s.length - 1, g.length - 1, a.length - 1);
+                    } catch (err) {
+                        showToast('Gagal membaca file Excel Backup!', 'error');
+                        boxPreview.classList.add('hidden');
+                        btnRestore.disabled = true;
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                showToast('Harap pilih file berformat .json atau .xlsx', 'warning');
+            }
+        }
+
+        function tampilkanRingkasanRestore(namaFile, jmlSiswa, jmlGuru, jmlLog) {
+            const boxPreview = document.getElementById('boxPreviewRestore');
+            const btnRestore = document.getElementById('btnEksekusiRestore');
+            document.getElementById('namaFileRestorePreview').innerText = namaFile;
+            document.getElementById('detailFileRestorePreview').innerText = `Terdeteksi: ${Math.max(0, jmlSiswa)} Siswa • ${Math.max(0, jmlGuru)} Guru • ${Math.max(0, jmlLog)} Riwayat Log Absen`;
+            boxPreview.classList.remove('hidden');
+            btnRestore.disabled = false;
+        }
+
+        function prosesImportSemuaData() {
+            if (!parsedRestorePayload) return showToast('Pilih file backup terlebih dahulu!', 'warning');
+            const mode = document.getElementById('modeImportBackup').value;
+            const modeTeks = mode === 'replace' ? 'MENIMPA (Mengganti Seluruh Database)' : 'MENGGABUNGKAN (Merge Data)';
+
+            bukaConfirmModal(
+                'Konfirmasi Import / Restore Semua Data',
+                `Anda akan memulihkan seluruh database dengan mode <strong>${modeTeks}</strong>. Data pada dashboard dan Google Spreadsheet akan diperbarui. Lanjutkan?`,
+                'Mulai Restore Data',
+                async () => {
+                    await eksekusiRestoreSemuaData(mode);
+                }
+            );
+        }
+
+        async function eksekusiRestoreSemuaData(mode) {
+            const btn = document.getElementById('btnEksekusiRestore');
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memulihkan & Menyinkronkan...`;
+
+            try {
+                const incomingSiswa = parsedRestorePayload.siswa || [['NIS', 'Nama', 'Kelas']];
+                const incomingGuru = parsedRestorePayload.guru || [['NIP', 'Nama', 'RFID']];
+                const incomingAbsen = parsedRestorePayload.absen || [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+
+                if (mode === 'replace') {
+                    masterDataSiswa = incomingSiswa;
+                    masterDataGuru = incomingGuru;
+                    masterDataAbsen = incomingAbsen;
+                } else {
+                    // Mode Merge (Gabungkan tanpa duplikasi NIS / NIP)
+                    if (masterDataSiswa.length === 0) masterDataSiswa = [['NIS', 'Nama', 'Kelas']];
+                    const existingNis = new Set(masterDataSiswa.slice(1).map(r => bersihkanID(r[0]).toLowerCase()));
+                    for (let i = 1; i < incomingSiswa.length; i++) {
+                        const row = incomingSiswa[i];
+                        if (!row || (!row[0] && !row[1])) continue;
+                        const id = bersihkanID(row[0]).toLowerCase();
+                        if (!existingNis.has(id)) {
+                            masterDataSiswa.push(row);
+                            existingNis.add(id);
+                        }
+                    }
+
+                    if (masterDataGuru.length === 0) masterDataGuru = [['NIP', 'Nama', 'RFID']];
+                    const existingNip = new Set(masterDataGuru.slice(1).map(r => bersihkanID(r[0]).toLowerCase()));
+                    for (let i = 1; i < incomingGuru.length; i++) {
+                        const row = incomingGuru[i];
+                        if (!row || (!row[0] && !row[1])) continue;
+                        const id = bersihkanID(row[0]).toLowerCase();
+                        if (!existingNip.has(id)) {
+                            masterDataGuru.push(row);
+                            existingNip.add(id);
+                        }
+                    }
+
+                    if (masterDataAbsen.length === 0) masterDataAbsen = [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+                    const existingLog = new Set(masterDataAbsen.slice(1).map(r => `${r[0]}|${bersihkanID(r[2])}`));
+                    for (let i = 1; i < incomingAbsen.length; i++) {
+                        const row = incomingAbsen[i];
+                        if (!row || !row[0]) continue;
+                        const key = `${row[0]}|${bersihkanID(row[2])}`;
+                        if (!existingLog.has(key)) {
+                            masterDataAbsen.push(row);
+                            existingLog.add(key);
+                        }
+                    }
+                }
+
+                simpanCacheLokal();
+                perbaruiSeluruhTampilanUI();
+
+                // Kirim ke Google Apps Script untuk pemulihan penuh di Cloud
+                try {
+                    const listSiswaObj = masterDataSiswa.slice(1).filter(r => r && (r[0] || r[1])).map(r => ({
+                        nis: bersihkanID(r[0]),
+                        nama: (r[1] || '').toString().trim(),
+                        kelas: (r[2] || '').toString().trim()
+                    }));
+                    const listGuruObj = masterDataGuru.slice(1).filter(r => r && (r[0] || r[1])).map(r => ({
+                        nip: bersihkanID(r[0]),
+                        nama: (r[1] || '').toString().trim(),
+                        rfid: bersihkanID(r[2])
+                    }));
+
+                    await fetch(URL_WEB_APP, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({
+                            aksi: 'restore_all',
+                            mode: mode,
+                            siswa: masterDataSiswa,
+                            guru: masterDataGuru,
+                            absen: masterDataAbsen,
+                            siswaList: listSiswaObj,
+                            guruList: listGuruObj
+                        })
+                    });
+                } catch (errSync) {
+                    console.warn('Catatan sinkronisasi cloud restore_all:', errSync);
+                }
+
+                document.getElementById('inputFileRestoreAll').value = '';
+                document.getElementById('boxPreviewRestore').classList.add('hidden');
+                parsedRestorePayload = null;
+
+                showToast('Seluruh data berhasil di-import dan diperbarui!', 'success');
+            } catch (err) {
+                showToast('Gagal memproses import data: ' + err.message, 'error');
+            } finally {
+                btn.innerHTML = origHTML;
+                btn.disabled = true;
+            }
         }
 
         function updatePendingSaveBadge() {
@@ -1189,31 +1841,8 @@
                     masterDataGuru = data.guru || [];
                     masterDataAbsen = data.absen || [];
 
-                    try {
-                        localStorage.setItem(CACHE_KEY, JSON.stringify({
-                            siswa: masterDataSiswa,
-                            guru: masterDataGuru,
-                            absen: masterDataAbsen,
-                            timestamp: Date.now()
-                        }));
-                    } catch (e) {}
-
-                    qrSiswaRendered = false;
-                    qrGuruRendered = false;
-
-                    hitungTotalPesertaCepat();
-                    ekstrakKelasUnik(masterDataSiswa);
-                    updateDashboardStats(masterDataAbsen);
-                    renderLogAbsen(masterDataAbsen); 
-                    prosesRekapAbsensi();
-
-                    if (activeTabId === 'siswa') {
-                        renderTableSiswa(masterDataSiswa);
-                        qrSiswaRendered = true;
-                    } else if (activeTabId === 'guru') {
-                        renderTableGuru(masterDataGuru);
-                        qrGuruRendered = true;
-                    }
+                    simpanCacheLokal();
+                    perbaruiSeluruhTampilanUI();
 
                     if(syncText) {
                         syncText.innerText = 'Data Terkini (Online)';
@@ -1269,7 +1898,7 @@
         function ekstrakKelasUnik(dataSiswa) {
             daftarKelasUnik.clear();
             for(let i = 1; i < dataSiswa.length; i++) { 
-                if(dataSiswa[i][2]) daftarKelasUnik.add(dataSiswa[i][2].toString().trim()); 
+                if(dataSiswa[i] && dataSiswa[i][2]) daftarKelasUnik.add(dataSiswa[i][2].toString().trim()); 
             }
             const filterLog = document.getElementById('filterKelasLog'); 
             const filterSiswa = document.getElementById('filterKelasSiswa');
@@ -1307,7 +1936,7 @@
             const fragment = document.createDocumentFragment();
             const limit = Math.max(1, dataAbsen.length - 300);
             for(let i = dataAbsen.length - 1; i >= limit; i--) { 
-                if(!dataAbsen[i][0]) continue; 
+                if(!dataAbsen[i] || !dataAbsen[i][0]) continue; 
                 fragment.appendChild(buatBarisLog(dataAbsen[i])); 
             }
             tbody.appendChild(fragment);
@@ -1437,7 +2066,7 @@
             const tbody = document.getElementById('guruTableBody'); 
             tbody.innerHTML = ''; 
             if(!dataGuru || dataGuru.length <= 1) { 
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400 text-sm">Belum ada data guru terdaftar</td></tr>`; 
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-sm">Belum ada data guru terdaftar</td></tr>`; 
                 return; 
             }
 
@@ -1460,6 +2089,7 @@
 
         function buatBarisGuru(noUrut, nip, nama, rfid, index) {
             const safeNama = nama.replace(/'/g, "\\'");
+            const safeNip = nip.replace(/'/g, "\\'");
             const qrString = `NIP: ${nip}\nNama: ${nama}`;
             const tr = document.createElement('tr'); 
             tr.className = "hover:bg-slate-50/80 transition-colors baris-guru";
@@ -1476,11 +2106,16 @@
                 <td class="px-5 py-3.5 text-xs font-mono-code text-slate-500">${rfid !== '-' ? `<span class="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">${rfid}</span>` : '-'}</td>
                 <td class="px-5 py-3.5 text-center">
                     <div class="inline-flex items-center gap-3 bg-slate-50/80 p-1.5 rounded-xl border border-slate-200/60">
-                        <div id="qr-guru-${index}" data-qr="${qrString.replace(/"/g, '&quot;')}" data-qr-type="guru" onclick="bukaPreviewQR('qr-guru-${index}', '${safeNama}', 'NIP: ${nip}', 'DEWAN GURU')" title="Klik untuk perbesar QR" class="qr-hd-wrapper qr-lazy-target p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all"></div>
-                        <button onclick="downloadQRGuru(${index}, '${nip}', '${safeNama}')" class="text-xs font-semibold bg-white hover:bg-purple-50 text-purple-700 border border-slate-200 hover:border-purple-200 px-3 py-1.5 rounded-lg shadow-sm transition-all">
+                        <div id="qr-guru-${index}" data-qr="${qrString.replace(/"/g, '&quot;')}" data-qr-type="guru" onclick="bukaPreviewQR('qr-guru-${index}', '${safeNama}', 'NIP: ${safeNip}', 'DEWAN GURU')" title="Klik untuk perbesar QR" class="qr-hd-wrapper qr-lazy-target p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all"></div>
+                        <button onclick="downloadQRGuru(${index}, '${safeNip}', '${safeNama}')" class="text-xs font-semibold bg-white hover:bg-purple-50 text-purple-700 border border-slate-200 hover:border-purple-200 px-3 py-1.5 rounded-lg shadow-sm transition-all">
                             <i class="fa-solid fa-download mr-1"></i>PNG
                         </button>
                     </div>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                    <button onclick="konfirmasiHapusSatuGuru(${index}, '${safeNip}', '${safeNama}')" title="Hapus Guru Ini" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200/80 inline-flex items-center justify-center transition-all">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
                 </td>`;
             return tr;
         }
@@ -1509,7 +2144,7 @@
             
             globalGuruList.push({ nip, nama, rfid });
             const tr = document.createElement('tr'); tr.className = "bg-amber-50/70"; 
-            tr.innerHTML = `<td class="px-5 py-3.5 text-xs text-center font-bold text-amber-600">BARU</td><td class="px-5 py-3.5 text-xs font-mono-code">${nip}</td><td class="px-5 py-3.5 text-sm font-bold text-slate-900">${nama}</td><td class="px-5 py-3.5 text-xs font-mono-code">${rfid || '-'}</td><td class="px-5 py-3.5 text-center"><span class="text-[11px] bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">Menunggu Disimpan</span></td>`;
+            tr.innerHTML = `<td class="px-5 py-3.5 text-xs text-center font-bold text-amber-600">BARU</td><td class="px-5 py-3.5 text-xs font-mono-code">${nip}</td><td class="px-5 py-3.5 text-sm font-bold text-slate-900">${nama}</td><td class="px-5 py-3.5 text-xs font-mono-code">${rfid || '-'}</td><td colspan="2" class="px-5 py-3.5 text-center"><span class="text-[11px] bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">Menunggu Disimpan</span></td>`;
             document.getElementById('guruTableBody').insertBefore(tr, document.getElementById('guruTableBody').firstChild);
             
             updatePendingSaveBadge();
@@ -1779,7 +2414,11 @@
                 updateStatistikRekapUI(0, 0, 0, true);
                 return;
             }
-            if (!isGuru && (!masterDataSiswa || masterDataSiswa.length <= 1)) return;
+            if (!isGuru && (!masterDataSiswa || masterDataSiswa.length <= 1)) {
+                document.getElementById('rekapTableBody').innerHTML = `<tr><td colspan="10" class="px-6 py-12 text-center text-slate-400">Belum ada data siswa terdaftar.</td></tr>`;
+                updateStatistikRekapUI(0, 0, 0, false);
+                return;
+            }
 
             const kelasDipilih = isGuru ? 'Guru' : document.getElementById('rekapKelas').value;
             const tipePeriode = document.getElementById('rekapPeriodeTipe').value;
@@ -2108,7 +2747,7 @@
             const tbody = document.getElementById('siswaTableBody'); 
             tbody.innerHTML = ''; 
             if(!dataSiswa || dataSiswa.length <= 1) { 
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400 text-sm">Belum ada data siswa terdaftar</td></tr>`; 
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-sm">Belum ada data siswa terdaftar</td></tr>`; 
                 return; 
             }
 
@@ -2132,6 +2771,7 @@
         function buatBarisSiswa(noUrut, nis, nama, kelas, index) {
             const safeNama = nama.replace(/'/g, "\\'"); 
             const safeKelas = kelas.replace(/'/g, "\\'");
+            const safeNis = nis.replace(/'/g, "\\'");
             const qrString = `NIS: ${nis}\nNama: ${nama}\nKelas: ${kelas}`;
             const tr = document.createElement('tr'); 
             tr.className = "hover:bg-slate-50/80 transition-colors baris-siswa";
@@ -2149,11 +2789,16 @@
                 <td class="px-5 py-3.5 text-xs"><span class="bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-lg border border-slate-200/80">${kelas}</span></td>
                 <td class="px-5 py-3.5 text-center">
                     <div class="inline-flex items-center gap-3 bg-slate-50/80 p-1.5 rounded-xl border border-slate-200/60">
-                        <div id="qr-db-${index}" data-qr="${qrString.replace(/"/g, '&quot;')}" data-qr-type="siswa" onclick="bukaPreviewQR('qr-db-${index}', '${safeNama}', 'NIS: ${nis}', 'KELAS ${safeKelas}')" title="Klik untuk perbesar QR" class="qr-hd-wrapper qr-lazy-target p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"></div>
-                        <button onclick="downloadQR(${index}, '${nis}', '${safeNama}', '${safeKelas}')" class="text-xs font-semibold bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 px-3 py-1.5 rounded-lg shadow-sm transition-all">
+                        <div id="qr-db-${index}" data-qr="${qrString.replace(/"/g, '&quot;')}" data-qr-type="siswa" onclick="bukaPreviewQR('qr-db-${index}', '${safeNama}', 'NIS: ${safeNis}', 'KELAS ${safeKelas}')" title="Klik untuk perbesar QR" class="qr-hd-wrapper qr-lazy-target p-1 bg-white border border-slate-200 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"></div>
+                        <button onclick="downloadQR(${index}, '${safeNis}', '${safeNama}', '${safeKelas}')" class="text-xs font-semibold bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 px-3 py-1.5 rounded-lg shadow-sm transition-all">
                             <i class="fa-solid fa-download mr-1"></i>PNG
                         </button>
                     </div>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                    <button onclick="konfirmasiHapusSatuSiswa(${index}, '${safeNis}', '${safeNama}', '${safeKelas}')" title="Hapus Siswa Ini" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200/80 inline-flex items-center justify-center transition-all">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
                 </td>`;
             return tr;
         }
@@ -2178,8 +2823,19 @@
 
             const labelBtnBulk = document.getElementById('labelBtnBulk');
             const labelBtnPdf = document.getElementById('labelBtnPdf');
+            const btnHapusKelas = document.getElementById('btnHapusPerKelas');
+            const labelHapusKelas = document.getElementById('labelHapusKelas');
+
             if (labelBtnBulk) labelBtnBulk.innerText = kelas === 'Semua' ? 'Unduh ZIP (Semua Kelas)' : `Unduh ZIP (${kelas})`;
             if (labelBtnPdf) labelBtnPdf.innerText = kelas === 'Semua' ? `Cetak PDF ${ukuran} (Semua Kelas)` : `Cetak PDF ${ukuran} (${kelas})`;
+            if (btnHapusKelas) {
+                if (kelas === 'Semua') {
+                    btnHapusKelas.classList.add('hidden');
+                } else {
+                    btnHapusKelas.classList.remove('hidden');
+                    if (labelHapusKelas) labelHapusKelas.innerText = `Hapus Kelas ${kelas}`;
+                }
+            }
         }
 
         function buatCanvasQRDenganLabel(sourceCanvas, nip, nama, kategori) {
@@ -2347,7 +3003,7 @@
             }
 
             for(let i = 1; i < dataAbsen.length; i++) { 
-                if(!dataAbsen[i][0]) continue;
+                if(!dataAbsen[i] || !dataAbsen[i][0]) continue;
                 const d = parseTanggalAbsen(dataAbsen[i][0]);
                 if(!d) continue;
 
@@ -2403,10 +3059,11 @@
                 'logabsen': { title: 'Riwayat Kehadiran' },
                 'rekap': { title: 'Rekap & Laporan Absensi' },
                 'siswa': { title: 'Database Siswa & QR Code' },
-                'guru': { title: 'Database Guru & ID Card' }
+                'guru': { title: 'Database Guru & ID Card' },
+                'backup': { title: 'Backup & Restore Database' }
             };
 
-            ['dashboard', 'logabsen', 'rekap', 'siswa', 'guru'].forEach(t => {
+            ['dashboard', 'logabsen', 'rekap', 'siswa', 'guru', 'backup'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.add('hidden');
                 const btn = document.getElementById(`nav-${t}`);
                 btn.className = "w-full flex items-center justify-between text-left py-3 px-4 rounded-xl hover:bg-slate-900 hover:text-white transition-all duration-200 text-slate-400 font-medium text-sm group";
@@ -2440,7 +3097,7 @@
             
             globalSiswaList.push({ nis, nama, kelas });
             const tr = document.createElement('tr'); tr.className = "bg-amber-50/70"; 
-            tr.innerHTML = `<td class="px-5 py-3.5 text-xs text-center font-bold text-amber-600">BARU</td><td class="px-5 py-3.5 text-xs font-mono-code">${nis}</td><td class="px-5 py-3.5 text-sm font-bold text-slate-900">${nama}</td><td class="px-5 py-3.5 text-xs font-bold">${kelas}</td><td class="px-5 py-3.5 text-center"><span class="text-[11px] bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">Menunggu Disimpan</span></td>`;
+            tr.innerHTML = `<td class="px-5 py-3.5 text-xs text-center font-bold text-amber-600">BARU</td><td class="px-5 py-3.5 text-xs font-mono-code">${nis}</td><td class="px-5 py-3.5 text-sm font-bold text-slate-900">${nama}</td><td class="px-5 py-3.5 text-xs font-bold">${kelas}</td><td colspan="2" class="px-5 py-3.5 text-center"><span class="text-[11px] bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">Menunggu Disimpan</span></td>`;
             document.getElementById('siswaTableBody').insertBefore(tr, document.getElementById('siswaTableBody').firstChild);
             
             updatePendingSaveBadge();
