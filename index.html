@@ -184,7 +184,7 @@
                         <span id="loginPreloadDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                         <span id="loginPreloadStatus">Menyiapkan data di latar belakang...</span>
                     </span>
-                    <span>v2.6 Enterprise</span>
+                    <span>v2.7 Enterprise</span>
                 </div>
             </div>
         </div>
@@ -362,7 +362,7 @@
                                 <i class="fa-solid fa-bolt text-amber-400"></i> Pemantauan Real-Time
                             </span>
                             <h3 class="text-xl md:text-2xl font-extrabold tracking-tight">Ringkasan Presensi Hari Ini</h3>
-                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran siswa dan dewan guru secara langsung, kelola kartu QR/RFID, serta cadangkan seluruh database sekolah dengan aman.</p>
+                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran Masuk & Pulang siswa serta dewan guru secara langsung, kelola kartu QR/RFID, dan cadangkan database sekolah dengan aman.</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5">
                             <button onclick="switchTab('backup')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/15 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
@@ -474,7 +474,7 @@
             </div>
 
             <!-- ========================================================= -->
-            <!-- TAB 2: LOG ABSEN                                          -->
+            <!-- TAB 2: LOG ABSEN (DENGAN FILTER STATUS MASUK / PULANG)     -->
             <!-- ========================================================= -->
             <div id="tab-logabsen" class="hidden space-y-6 tab-animate">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
@@ -484,11 +484,11 @@
                                 <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-clock-rotate-left"></i></span>
                                 Riwayat Aktivitas Presensi
                             </h3>
-                            <p class="text-xs text-slate-500 mt-1">Data diurutkan dari waktu scan paling baru</p>
+                            <p class="text-xs text-slate-500 mt-1">Data diurutkan dari waktu scan paling baru (Masuk & Pulang)</p>
                         </div>
                         
                         <div class="flex flex-col sm:flex-row flex-wrap gap-2.5 w-full xl:w-auto action-tools">
-                            <div class="relative w-full sm:w-56">
+                            <div class="relative w-full sm:w-52">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                 <input type="text" id="searchLog" onkeyup="filterLogAbsen()" placeholder="Cari Nama / NIS / NIP..." class="border border-slate-200 rounded-xl pl-9 pr-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full bg-white">
                             </div>
@@ -497,6 +497,13 @@
                             
                             <select id="filterKelasLog" onchange="filterLogAbsen()" class="border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white w-full sm:w-auto font-medium text-slate-700">
                                 <option value="Semua">Semua Kelas / Jabatan</option>
+                            </select>
+
+                            <!-- Dropdown Filter Status (Masuk / Pulang) -->
+                            <select id="filterStatusLog" onchange="filterLogAbsen()" class="border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white w-full sm:w-auto font-semibold text-slate-700" title="Filter Status Kehadiran">
+                                <option value="Semua">Semua Status</option>
+                                <option value="Masuk">Status: Masuk</option>
+                                <option value="Pulang">Status: Pulang</option>
                             </select>
 
                             <button onclick="resetFilterLog()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-3 py-2 rounded-xl text-xs md:text-sm flex items-center justify-center gap-1.5 transition-colors" title="Reset Filter">
@@ -688,7 +695,6 @@
                                         <i class="fa-solid fa-file-csv text-emerald-600"></i> Import CSV
                                     </div>
                                 </div>
-                                <!-- Tombol Hapus Semua Siswa -->
                                 <button onclick="konfirmasiHapusSemuaSiswa()" class="flex-1 md:flex-initial bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 font-semibold py-2.5 px-4 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all shadow-sm" title="Kosongkan Seluruh Data Siswa">
                                     <i class="fa-solid fa-trash-can"></i> Hapus Semua Siswa
                                 </button>
@@ -704,7 +710,6 @@
                                 <select id="filterKelasSiswa" onchange="filterDataSiswa()" class="border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white font-semibold text-slate-700">
                                     <option value="Semua">Semua Kelas</option>
                                 </select>
-                                <!-- Tombol Hapus Per Kelas (Muncul saat filter kelas aktif) -->
                                 <button id="btnHapusPerKelas" onclick="konfirmasiHapusKelasSiswa()" class="hidden bg-amber-50 hover:bg-amber-600 text-amber-700 hover:text-white border border-amber-200 font-semibold px-3.5 py-2 rounded-xl text-xs md:text-sm flex items-center justify-center gap-1.5 transition-all">
                                     <i class="fa-solid fa-users-slash"></i> <span id="labelHapusKelas">Hapus Kelas</span>
                                 </button>
@@ -825,7 +830,6 @@
             <!-- TAB 6: BACKUP & RESTORE SEMUA DATA                        -->
             <!-- ========================================================= -->
             <div id="tab-backup" class="hidden space-y-6 tab-animate">
-                <!-- Header Info Backup -->
                 <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 text-white p-6 md:p-7 rounded-2xl shadow-lg border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 mb-2.5">
@@ -893,7 +897,6 @@
                                 <input type="file" id="inputFileRestoreAll" accept=".json,.xlsx,.xls" onchange="pratinjauFileRestore(event)" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl p-1.5 bg-white cursor-pointer" />
                             </div>
 
-                            <!-- Kotak Pratinjau File sebelum dieksekusi -->
                             <div id="boxPreviewRestore" class="hidden p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-950 space-y-1">
                                 <p class="font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-file-circle-check text-indigo-600"></i> <span id="namaFileRestorePreview">-</span></p>
                                 <p id="detailFileRestorePreview" class="text-[11px] text-indigo-800 font-medium">-</p>
@@ -1326,7 +1329,6 @@
         }
 
         async function eksekusiHapusSatuSiswa(index, nis, nama) {
-            // 1. Hapus dari array lokal berdasarkan index atau kecocokan NIS+Nama
             if (index >= 1 && index < masterDataSiswa.length && bersihkanID(masterDataSiswa[index][0]) === bersihkanID(nis)) {
                 masterDataSiswa.splice(index, 1);
             } else {
@@ -1340,7 +1342,6 @@
             perbaruiSeluruhTampilanUI();
             showToast(`Data siswa "${nama}" berhasil dihapus.`, 'success');
 
-            // 2. Sinkronkan penghapusan ke Google Sheets
             try {
                 await fetch(URL_WEB_APP, {
                     method: 'POST',
@@ -1358,7 +1359,7 @@
 
             bukaConfirmModal(
                 `Hapus Seluruh Siswa Kelas ${kelas}`,
-                ` Anda akan menghapus seluruh siswa yang berada di <strong>Kelas ${kelas}</strong>. Pastikan Anda telah melakukan Backup data terlebih dahulu. Lanjutkan?`,
+                `Anda akan menghapus seluruh siswa yang berada di <strong>Kelas ${kelas}</strong>. Pastikan Anda telah melakukan Backup data terlebih dahulu. Lanjutkan?`,
                 `Hapus Kelas ${kelas}`,
                 async () => {
                     masterDataSiswa = masterDataSiswa.filter((row, idx) => {
@@ -1512,7 +1513,7 @@
             const tglStr = formatDateKey(now);
             const payloadBackup = {
                 app: "EduAbsen SMPN 1 Satui",
-                version: "2.6",
+                version: "2.7",
                 exportedAt: now.toISOString(),
                 stats: {
                     totalSiswa: totalSiswaDatabase,
@@ -1657,7 +1658,6 @@
                     masterDataGuru = incomingGuru;
                     masterDataAbsen = incomingAbsen;
                 } else {
-                    // Mode Merge (Gabungkan tanpa duplikasi NIS / NIP)
                     if (masterDataSiswa.length === 0) masterDataSiswa = [['NIS', 'Nama', 'Kelas']];
                     const existingNis = new Set(masterDataSiswa.slice(1).map(r => bersihkanID(r[0]).toLowerCase()));
                     for (let i = 1; i < incomingSiswa.length; i++) {
@@ -1683,11 +1683,11 @@
                     }
 
                     if (masterDataAbsen.length === 0) masterDataAbsen = [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
-                    const existingLog = new Set(masterDataAbsen.slice(1).map(r => `${r[0]}|${bersihkanID(r[2])}`));
+                    const existingLog = new Set(masterDataAbsen.slice(1).map(r => `${r[0]}|${bersihkanID(r[2])}|${(r[4] || 'Masuk').toString().trim().toLowerCase()}`));
                     for (let i = 1; i < incomingAbsen.length; i++) {
                         const row = incomingAbsen[i];
                         if (!row || !row[0]) continue;
-                        const key = `${row[0]}|${bersihkanID(row[2])}`;
+                        const key = `${row[0]}|${bersihkanID(row[2])}|${(row[4] || 'Masuk').toString().trim().toLowerCase()}`;
                         if (!existingLog.has(key)) {
                             masterDataAbsen.push(row);
                             existingLog.add(key);
@@ -1698,7 +1698,6 @@
                 simpanCacheLokal();
                 perbaruiSeluruhTampilanUI();
 
-                // Kirim ke Google Apps Script untuk pemulihan penuh di Cloud
                 try {
                     const listSiswaObj = masterDataSiswa.slice(1).filter(r => r && (r[0] || r[1])).map(r => ({
                         nis: bersihkanID(r[0]),
@@ -1940,6 +1939,7 @@
                 fragment.appendChild(buatBarisLog(dataAbsen[i])); 
             }
             tbody.appendChild(fragment);
+            filterLogAbsen();
         }
         
         function buatBarisLog(row) {
@@ -1953,6 +1953,11 @@
             }
 
             const cleanNis = bersihkanID(row[2]);
+            let rawStatus = (row[4] || 'Masuk').toString().trim();
+            if (rawStatus.toLowerCase() === 'hadir') rawStatus = 'Masuk';
+            const isPulang = rawStatus.toLowerCase() === 'pulang';
+            const statusAbsen = isPulang ? 'Pulang' : 'Masuk';
+
             const tipeUser = row[5] || (row[3] === 'Guru' ? 'Guru' : 'Siswa');
 
             const tr = document.createElement('tr'); 
@@ -1965,6 +1970,7 @@
             tr.setAttribute('data-nis-asli', cleanNis || '-');
             tr.setAttribute('data-kelas', (row[3] || '').toString().trim());
             tr.setAttribute('data-tipe', tipeUser);
+            tr.setAttribute('data-status', statusAbsen);
             tr.innerHTML = `
                 <td class="px-5 py-3.5 text-xs font-mono-code text-slate-600 whitespace-nowrap">${waktuTampil}</td>
                 <td class="px-5 py-3.5 text-sm font-bold text-slate-900">${row[1] || '-'}</td>
@@ -1974,8 +1980,8 @@
                     <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${tipeUser === 'Guru' ? 'bg-purple-50 text-purple-700 border border-purple-200/60' : 'bg-indigo-50 text-indigo-700 border border-indigo-200/60'}">${tipeUser}</span>
                 </td>
                 <td class="px-5 py-3.5">
-                    <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 py-1 px-2.5 rounded-full text-[11px] font-bold">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Hadir
+                    <span class="inline-flex items-center gap-1.5 ${isPulang ? 'bg-amber-50 text-amber-700 border-amber-200/60' : 'bg-emerald-50 text-emerald-700 border-emerald-200/60'} border py-1 px-2.5 rounded-full text-[11px] font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full ${isPulang ? 'bg-amber-500' : 'bg-emerald-500'}"></span> ${statusAbsen}
                     </span>
                 </td>`;
             return tr;
@@ -1985,12 +1991,14 @@
             const search = document.getElementById('searchLog').value.toLowerCase(); 
             const kelas = document.getElementById('filterKelasLog').value;
             const tanggal = document.getElementById('filterTanggalLog').value;
+            const status = document.getElementById('filterStatusLog') ? document.getElementById('filterStatusLog').value : 'Semua';
 
             document.querySelectorAll('.baris-log').forEach(tr => {
                 const matchSearch = tr.getAttribute('data-nama').includes(search) || tr.getAttribute('data-nis').includes(search);
                 const matchKelas = kelas === 'Semua' || (kelas === 'Guru' ? tr.getAttribute('data-tipe') === 'Guru' : tr.getAttribute('data-kelas') === kelas);
                 const matchTanggal = !tanggal || tr.getAttribute('data-tanggal') === tanggal;
-                tr.style.display = (matchSearch && matchKelas && matchTanggal) ? '' : 'none';
+                const matchStatus = status === 'Semua' || tr.getAttribute('data-status').toLowerCase() === status.toLowerCase();
+                tr.style.display = (matchSearch && matchKelas && matchTanggal && matchStatus) ? '' : 'none';
             });
         }
 
@@ -1998,6 +2006,9 @@
             document.getElementById('searchLog').value = '';
             document.getElementById('filterTanggalLog').value = '';
             document.getElementById('filterKelasLog').value = 'Semua';
+            if (document.getElementById('filterStatusLog')) {
+                document.getElementById('filterStatusLog').value = 'Semua';
+            }
             filterLogAbsen();
         }
 
@@ -2014,7 +2025,7 @@
                     tr.getAttribute('data-nis-asli'),
                     tr.getAttribute('data-kelas'),
                     tr.getAttribute('data-tipe'),
-                    'Hadir'
+                    tr.getAttribute('data-status') || 'Masuk'
                 ]);
             });
 
@@ -2024,8 +2035,9 @@
             XLSX.utils.book_append_sheet(wb, ws, 'Log_Absensi');
 
             const kelas = document.getElementById('filterKelasLog').value;
+            const status = document.getElementById('filterStatusLog') ? document.getElementById('filterStatusLog').value : 'Semua';
             const tgl = document.getElementById('filterTanggalLog').value || 'Semua_Tanggal';
-            XLSX.writeFile(wb, `Log_Absensi_${kelas}_${tgl}.xlsx`);
+            XLSX.writeFile(wb, `Log_Absensi_${kelas}_${status}_${tgl}.xlsx`);
             showToast('File Excel Log Kehadiran berhasil diunduh.', 'success');
         }
 
