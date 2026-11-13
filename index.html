@@ -62,7 +62,7 @@
         }
 
         @media print {
-            aside, header, #loginScreen, #sidebarOverlay, #actionButtonsWrapper, #manualAddModal, #manualAddGuruModal, #qrPreviewModal, #confirmModal, #toastContainer, .no-print, .action-tools { display: none !important; }
+            aside, header, #loginScreen, #sidebarOverlay, #actionButtonsWrapper, #manualAddModal, #manualAddGuruModal, #modalInputManual, #qrPreviewModal, #confirmModal, #toastContainer, .no-print, .action-tools { display: none !important; }
             main { padding: 0 !important; margin: 0 !important; background: white !important; }
             .shadow-sm { box-shadow: none !important; }
         }
@@ -76,7 +76,6 @@
     <!-- LAYAR LOGIN MODERN & PROFESIONAL                          -->
     <!-- ========================================================= -->
     <div id="loginScreen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 p-4 overflow-y-auto transition-all duration-500">
-        <!-- Dekorasi Cahaya Latar Belakang -->
         <div class="fixed inset-0 overflow-hidden pointer-events-none">
             <div class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/25 rounded-full blur-3xl"></div>
             <div class="absolute top-1/2 -right-32 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl"></div>
@@ -84,10 +83,8 @@
             <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
         </div>
 
-        <!-- Kartu Utama Login (Split Layout) -->
         <div id="loginCard" class="relative z-10 w-full max-w-4xl bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 transition-all duration-300">
-            
-            <!-- Panel Kiri: Branding & Informasi Sistem -->
+            <!-- Panel Kiri -->
             <div class="lg:col-span-5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-900 p-8 md:p-10 text-white flex flex-col justify-between relative overflow-hidden">
                 <div class="relative z-10">
                     <div class="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/15 mb-8">
@@ -120,11 +117,10 @@
                     <p class="text-[11px] text-indigo-200/60 pt-2">NPSN: 30303610 &bull; Tanah Bumbu, Kalimantan Selatan</p>
                 </div>
 
-                <!-- Ornamen Lingkaran -->
                 <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             </div>
 
-            <!-- Panel Kanan: Form Autentikasi -->
+            <!-- Panel Kanan -->
             <div class="lg:col-span-7 p-8 md:p-10 lg:p-12 flex flex-col justify-center bg-slate-900/95 text-slate-200">
                 <div class="mb-7">
                     <span class="text-[11px] font-bold uppercase tracking-widest text-indigo-400">Otorisasi Pengelola</span>
@@ -132,7 +128,6 @@
                     <p class="text-xs text-slate-400 mt-1">Masukkan kredensial administrator untuk mengakses dashboard.</p>
                 </div>
 
-                <!-- Alert Box Pesan Error Login -->
                 <div id="loginErrorAlert" class="hidden mb-5 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-3">
                     <i class="fa-solid fa-circle-exclamation text-rose-400 text-base"></i>
                     <span id="loginErrorText">Username atau Password yang Anda masukkan salah!</span>
@@ -178,13 +173,12 @@
                     </button>
                 </form>
 
-                <!-- Indikator Preload Data di Bawah Login -->
                 <div class="mt-8 pt-5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
                     <span class="flex items-center gap-2">
                         <span id="loginPreloadDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                         <span id="loginPreloadStatus">Menyiapkan data di latar belakang...</span>
                     </span>
-                    <span>v2.7 Enterprise</span>
+                    <span>v2.8 Enterprise</span>
                 </div>
             </div>
         </div>
@@ -217,7 +211,6 @@
             </button>
         </div>
         
-        <!-- Navigation Menu -->
         <div class="px-6 pt-6 pb-2 flex items-center justify-between">
             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Menu Navigasi</span>
         </div>
@@ -279,7 +272,7 @@
             </button>
         </nav>
         
-        <!-- Sidebar Footer Status & Tombol Logout -->
+        <!-- Sidebar Footer -->
         <div class="p-4 border-t border-slate-800/80 bg-slate-900/40">
             <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/90 border border-slate-800">
                 <div class="flex items-center gap-3">
@@ -325,6 +318,12 @@
                     <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">WITA</span>
                 </div>
 
+                <!-- Pintasan Cepat Input Manual -->
+                <button onclick="toggleModalInputManual()" title="Input Absen Manual (Sakit / Izin / Masuk / Pulang)" class="no-print hidden sm:flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 px-3.5 py-2.5 rounded-xl transition-all duration-200 font-bold text-xs">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span class="hidden xl:inline">Input Manual</span>
+                </button>
+
                 <!-- Pintasan Cepat Backup JSON -->
                 <button onclick="backupSemuaDataJSON()" title="Backup Cepat Seluruh Database (.json)" class="no-print hidden sm:flex items-center gap-2 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200/80 px-3.5 py-2.5 rounded-xl transition-all duration-200 font-semibold text-xs">
                     <i class="fa-solid fa-download text-indigo-500"></i>
@@ -362,11 +361,11 @@
                                 <i class="fa-solid fa-bolt text-amber-400"></i> Pemantauan Real-Time
                             </span>
                             <h3 class="text-xl md:text-2xl font-extrabold tracking-tight">Ringkasan Presensi Hari Ini</h3>
-                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran Masuk & Pulang siswa serta dewan guru secara langsung, kelola kartu QR/RFID, dan cadangkan database sekolah dengan aman.</p>
+                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran Masuk, Pulang, Izin, dan Sakit secara langsung, kelola kartu QR/RFID, dan unduh laporan rekapitulasi berkala.</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5">
-                            <button onclick="switchTab('backup')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/15 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
-                                <i class="fa-solid fa-database"></i> Backup & Restore
+                            <button onclick="toggleModalInputManual()" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/15 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
+                                <i class="fa-solid fa-pen-to-square"></i> Input Sakit / Izin
                             </button>
                             <button onclick="switchTab('rekap')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all">
                                 <i class="fa-solid fa-file-export"></i> Buka Rekapitulasi
@@ -400,7 +399,7 @@
                         </div>
                     </div>
 
-                    <!-- Card 2: Siswa Belum Hadir -->
+                    <!-- Card 2: Siswa Belum Hadir / Izin / Sakit -->
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-md hover:border-rose-200 transition-all duration-200 flex flex-col justify-between">
                         <div class="flex items-start justify-between gap-4">
                             <div>
@@ -412,7 +411,7 @@
                             </div>
                         </div>
                         <div class="mt-4 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                            <span>Menunggu scan masuk</span>
+                            <span id="stat-izin-sakit-hari-ini">Izin: 0 &bull; Sakit: 0</span>
                             <span id="stat-alfa-persen" class="font-bold text-rose-600">0%</span>
                         </div>
                     </div>
@@ -474,7 +473,7 @@
             </div>
 
             <!-- ========================================================= -->
-            <!-- TAB 2: LOG ABSEN (DENGAN FILTER STATUS MASUK / PULANG)     -->
+            <!-- TAB 2: LOG ABSEN (DENGAN FILTER & INPUT MANUAL)           -->
             <!-- ========================================================= -->
             <div id="tab-logabsen" class="hidden space-y-6 tab-animate">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
@@ -484,11 +483,15 @@
                                 <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-clock-rotate-left"></i></span>
                                 Riwayat Aktivitas Presensi
                             </h3>
-                            <p class="text-xs text-slate-500 mt-1">Data diurutkan dari waktu scan paling baru (Masuk & Pulang)</p>
+                            <p class="text-xs text-slate-500 mt-1">Data diurutkan dari waktu scan paling baru (Masuk, Pulang, Izin, & Sakit)</p>
                         </div>
                         
                         <div class="flex flex-col sm:flex-row flex-wrap gap-2.5 w-full xl:w-auto action-tools">
-                            <div class="relative w-full sm:w-52">
+                            <button onclick="toggleModalInputManual()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-600/20">
+                                <i class="fa-solid fa-pen-to-square"></i> <span>Input Absen Manual</span>
+                            </button>
+
+                            <div class="relative w-full sm:w-48">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                 <input type="text" id="searchLog" onkeyup="filterLogAbsen()" placeholder="Cari Nama / NIS / NIP..." class="border border-slate-200 rounded-xl pl-9 pr-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full bg-white">
                             </div>
@@ -499,11 +502,12 @@
                                 <option value="Semua">Semua Kelas / Jabatan</option>
                             </select>
 
-                            <!-- Dropdown Filter Status (Masuk / Pulang) -->
                             <select id="filterStatusLog" onchange="filterLogAbsen()" class="border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white w-full sm:w-auto font-semibold text-slate-700" title="Filter Status Kehadiran">
                                 <option value="Semua">Semua Status</option>
                                 <option value="Masuk">Status: Masuk</option>
                                 <option value="Pulang">Status: Pulang</option>
+                                <option value="Izin">Status: Izin</option>
+                                <option value="Sakit">Status: Sakit</option>
                             </select>
 
                             <button onclick="resetFilterLog()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-3 py-2 rounded-xl text-xs md:text-sm flex items-center justify-center gap-1.5 transition-colors" title="Reset Filter">
@@ -537,7 +541,7 @@
             </div>
 
             <!-- ========================================================= -->
-            <!-- TAB 3: REKAP & UNDUH ABSENSI                              -->
+            <!-- TAB 3: REKAP & UNDUH ABSENSI (SIMBOL & DETAIL JAM)        -->
             <!-- ========================================================= -->
             <div id="tab-rekap" class="hidden space-y-6 tab-animate">
                 <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-5">
@@ -547,9 +551,12 @@
                                 <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-calendar-check"></i></span>
                                 Generator Rekapitulasi Kehadiran
                             </h3>
-                            <p class="text-xs text-slate-500 mt-1">Susun matriks kehadiran Siswa atau Guru secara otomatis untuk laporan Mingguan, Bulanan, atau Semester</p>
+                            <p class="text-xs text-slate-500 mt-1">Susun matriks kehadiran Siswa atau Guru lengkap dengan opsi Simbol (✓/I/S) atau Detail Jam Masuk & Pulang</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5 w-full md:w-auto">
+                            <button onclick="toggleModalInputManual()" class="flex-1 md:flex-initial bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold px-4 py-2.5 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all">
+                                <i class="fa-solid fa-pen-to-square"></i> Input Izin / Sakit
+                            </button>
                             <button onclick="exportRekapExcel()" class="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all shadow-sm shadow-emerald-600/20">
                                 <i class="fa-solid fa-file-excel"></i> Unduh Excel (.xlsx)
                             </button>
@@ -559,7 +566,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                         <div>
                             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Target Peserta</label>
                             <select id="rekapTarget" onchange="ubahTargetRekap()" class="w-full border border-indigo-200 rounded-xl px-3.5 py-2.5 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-indigo-50/50 font-bold text-indigo-950">
@@ -603,6 +610,14 @@
                                 </select>
                                 <select id="rekapTahunSemester" onchange="prosesRekapAbsensi()" class="w-2/5 border border-slate-200 rounded-xl px-2.5 py-2.5 text-xs md:text-sm focus:outline-none focus:border-indigo-500 bg-white font-semibold text-slate-700"></select>
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mode Tampilan Sel</label>
+                            <select id="rekapFormatTampilan" onchange="prosesRekapAbsensi()" class="w-full border border-indigo-200 rounded-xl px-3.5 py-2.5 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-indigo-50/40 font-bold text-indigo-900">
+                                <option value="simbol" selected>Simbol (✓ / I / S)</option>
+                                <option value="waktu">Detail Jam (Masuk & Pulang)</option>
+                            </select>
                         </div>
 
                         <div>
@@ -655,9 +670,11 @@
                             <p id="subJudulTabelRekap" class="text-xs text-slate-500 mt-0.5">Menampilkan rincian kehadiran peserta</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600 bg-white px-3.5 py-2 rounded-xl border border-slate-200/80">
-                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Hadir (✓)</span>
-                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Tidak Hadir (-)</span>
-                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Libur</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Hadir (✓ / Jam)</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Izin (I)</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Sakit (S)</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Alfa (-)</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Libur (L)</span>
                         </div>
                     </div>
                     <div class="overflow-x-auto w-full">
@@ -911,7 +928,7 @@
                     </div>
                 </div>
 
-                <!-- ZONA BERBAHAYA: HAPUS KESELURUHAN DATABASE -->
+                <!-- ZONA BERBAHAYA -->
                 <div class="bg-rose-50/60 border border-rose-200/80 p-5 md:p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="flex items-start gap-3.5">
                         <div class="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg flex-shrink-0 mt-0.5">
@@ -934,6 +951,75 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL INPUT ABSEN MANUAL (MASUK / PULANG / IZIN / SAKIT)  -->
+    <!-- ========================================================= -->
+    <div id="modalInputManual" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm transition-opacity px-4">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md transform transition-all relative">
+            <button onclick="toggleModalInputManual()" class="absolute top-4 right-4 w-8 h-8 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-11 h-11 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-pen-to-square text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-lg text-slate-900">Input Absensi Manual</h3>
+                    <p class="text-xs text-slate-500">Catat kehadiran Izin, Sakit, atau susulan Masuk/Pulang</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Tanggal</label>
+                        <input type="date" id="manualTgl" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs md:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Jam Pencatatan</label>
+                        <input type="time" id="manualWaktu" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs md:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Pilih Siswa / Guru (Ketik Nama atau NIS/NIP)</label>
+                    <input list="listPesertaManual" id="manualNisNip" placeholder="Ketik nama atau NIS/NIP..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    <datalist id="listPesertaManual"></datalist>
+                    <p class="text-[11px] text-slate-400 mt-1">Pilih dari daftar yang muncul otomatis saat Anda mengetik.</p>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Status Kehadiran</label>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition-all text-xs md:text-sm font-bold text-emerald-800">
+                            <input type="radio" name="manualStatus" value="Masuk" class="text-emerald-600 focus:ring-emerald-500">
+                            <span>Hadir (Masuk)</span>
+                        </label>
+                        <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-amber-50/50 hover:border-amber-300 transition-all text-xs md:text-sm font-bold text-amber-800">
+                            <input type="radio" name="manualStatus" value="Pulang" class="text-amber-600 focus:ring-amber-500">
+                            <span>Pulang</span>
+                        </label>
+                        <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-sky-50/50 hover:border-sky-300 transition-all text-xs md:text-sm font-bold text-sky-800">
+                            <input type="radio" name="manualStatus" value="Izin" checked class="text-sky-600 focus:ring-sky-500">
+                            <span>Izin (I)</span>
+                        </label>
+                        <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-rose-50/50 hover:border-rose-300 transition-all text-xs md:text-sm font-bold text-rose-800">
+                            <input type="radio" name="manualStatus" value="Sakit" class="text-rose-600 focus:ring-rose-500">
+                            <span>Sakit (S)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-2.5">
+                <button onclick="toggleModalInputManual()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs md:text-sm transition-colors">Batal</button>
+                <button onclick="simpanAbsenManualServer()" id="btnSimpanManual" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs md:text-sm shadow-md shadow-indigo-600/20 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> <span>Simpan Presensi</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ========================================================= -->
@@ -1202,6 +1288,7 @@
 
             hitungTotalPesertaCepat();
             ekstrakKelasUnik(masterDataSiswa);
+            populateDatalistManual();
             updateDashboardStats(masterDataAbsen);
             renderLogAbsen(masterDataAbsen);
             prosesRekapAbsensi();
@@ -1296,6 +1383,134 @@
         }
 
         // =========================================================================
+        // FITUR INPUT ABSEN MANUAL (MASUK / PULANG / IZIN / SAKIT)
+        // =========================================================================
+        function populateDatalistManual() {
+            const dl = document.getElementById('listPesertaManual');
+            if (!dl) return;
+            let optionsHTML = '';
+            for (let i = 1; i < masterDataSiswa.length; i++) {
+                const r = masterDataSiswa[i];
+                if (!r || (!r[0] && !r[1])) continue;
+                const nis = bersihkanID(r[0]);
+                const nama = (r[1] || '').toString().trim();
+                const kls = (r[2] || '-').toString().trim();
+                optionsHTML += `<option value="${nis} - ${nama}">${nama} (Siswa Kelas ${kls})</option>`;
+            }
+            for (let i = 1; i < masterDataGuru.length; i++) {
+                const r = masterDataGuru[i];
+                if (!r || (!r[0] && !r[1])) continue;
+                const nip = bersihkanID(r[0]);
+                const nama = (r[1] || '').toString().trim();
+                optionsHTML += `<option value="${nip} - ${nama}">${nama} (Dewan Guru)</option>`;
+            }
+            dl.innerHTML = optionsHTML;
+        }
+
+        function toggleModalInputManual() {
+            const mod = document.getElementById('modalInputManual');
+            if (mod.classList.contains('hidden')) {
+                const now = new Date();
+                document.getElementById('manualTgl').value = formatDateKey(now);
+                document.getElementById('manualWaktu').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            }
+            mod.classList.toggle('hidden');
+        }
+
+        async function simpanAbsenManualServer() {
+            const rawInput = document.getElementById('manualNisNip').value.trim();
+            const tgl = document.getElementById('manualTgl').value;
+            const jam = document.getElementById('manualWaktu').value;
+            const statusRadio = document.querySelector('input[name="manualStatus"]:checked');
+            const statusAbsen = statusRadio ? statusRadio.value : 'Izin';
+
+            if (!rawInput || !tgl || !jam) {
+                return showToast('Harap pilih Siswa/Guru serta lengkapi Tanggal dan Jam!', 'warning');
+            }
+
+            // Ekstrak NIS/NIP atau Nama dari input datalist ("2026001 - Ahmad Fauzi")
+            const inputParts = rawInput.split(' - ');
+            const candidateID = bersihkanID(inputParts[0]);
+            const candidateNama = (inputParts[1] || rawInput).toString().trim().toLowerCase();
+
+            // Cari kecocokan di database lokal agar tampilan langsung terupdate
+            let targetPeserta = null;
+            for (let i = 1; i < masterDataSiswa.length; i++) {
+                const r = masterDataSiswa[i];
+                if (!r) continue;
+                const nis = bersihkanID(r[0]);
+                const nama = (r[1] || '').toString().trim();
+                if (nis === candidateID || nama.toLowerCase() === candidateNama || nama.toLowerCase() === rawInput.toLowerCase()) {
+                    targetPeserta = { id: nis, nama: nama, ket: (r[2] || '-').toString().trim(), tipe: 'Siswa' };
+                    break;
+                }
+            }
+            if (!targetPeserta) {
+                for (let i = 1; i < masterDataGuru.length; i++) {
+                    const r = masterDataGuru[i];
+                    if (!r) continue;
+                    const nip = bersihkanID(r[0]);
+                    const nama = (r[1] || '').toString().trim();
+                    if (nip === candidateID || nama.toLowerCase() === candidateNama || nama.toLowerCase() === rawInput.toLowerCase()) {
+                        targetPeserta = { id: nip, nama: nama, ket: 'Guru', tipe: 'Guru' };
+                        break;
+                    }
+                }
+            }
+
+            if (!targetPeserta) {
+                return showToast('Data Siswa atau Guru tidak ditemukan di database!', 'error');
+            }
+
+            const btn = document.getElementById('btnSimpanManual');
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`;
+
+            const [yyyy, mm, dd] = tgl.split('-');
+            const formattedTimestamp = `${dd}/${mm}/${yyyy} ${jam}:00`;
+
+            try {
+                const res = await fetch(URL_WEB_APP, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        aksi: 'absen_manual',
+                        nis: targetPeserta.id,
+                        nama: targetPeserta.nama,
+                        status: statusAbsen,
+                        timestamp: formattedTimestamp
+                    })
+                });
+                const resJson = await res.json();
+
+                // Tambahkan juga ke memori lokal agar instan terlihat
+                if (masterDataAbsen.length === 0) {
+                    masterDataAbsen.push(['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe']);
+                }
+                masterDataAbsen.push([
+                    formattedTimestamp,
+                    targetPeserta.nama,
+                    targetPeserta.id,
+                    targetPeserta.ket,
+                    statusAbsen,
+                    targetPeserta.tipe
+                ]);
+
+                simpanCacheLokal();
+                perbaruiSeluruhTampilanUI();
+                document.getElementById('manualNisNip').value = '';
+                toggleModalInputManual();
+                showToast(resJson.message || `Status ${statusAbsen} untuk ${targetPeserta.nama} berhasil disimpan!`, 'success');
+            } catch (err) {
+                showToast('Gagal menyimpan ke server: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+            }
+        }
+
+        // =========================================================================
         // MODAL KONFIRMASI UNIVERSAL
         // =========================================================================
         function bukaConfirmModal(judul, pesan, labelTombol, callbackFn) {
@@ -1375,7 +1590,7 @@
                         await fetch(URL_WEB_APP, {
                             method: 'POST',
                             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                            body: JSON.stringify({ aksi: 'hapus_kelas_siswa', kelas: kelas, siswaMatrix: masterDataSiswa })
+                            body: JSON.stringify({ aksi: 'hapus_kelas_siswa', kelas: kelas })
                         });
                     } catch (e) {}
                 }
@@ -1513,7 +1728,7 @@
             const tglStr = formatDateKey(now);
             const payloadBackup = {
                 app: "EduAbsen SMPN 1 Satui",
-                version: "2.7",
+                version: "2.8",
                 exportedAt: now.toISOString(),
                 stats: {
                     totalSiswa: totalSiswaDatabase,
@@ -1699,17 +1914,6 @@
                 perbaruiSeluruhTampilanUI();
 
                 try {
-                    const listSiswaObj = masterDataSiswa.slice(1).filter(r => r && (r[0] || r[1])).map(r => ({
-                        nis: bersihkanID(r[0]),
-                        nama: (r[1] || '').toString().trim(),
-                        kelas: (r[2] || '').toString().trim()
-                    }));
-                    const listGuruObj = masterDataGuru.slice(1).filter(r => r && (r[0] || r[1])).map(r => ({
-                        nip: bersihkanID(r[0]),
-                        nama: (r[1] || '').toString().trim(),
-                        rfid: bersihkanID(r[2])
-                    }));
-
                     await fetch(URL_WEB_APP, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1718,9 +1922,7 @@
                             mode: mode,
                             siswa: masterDataSiswa,
                             guru: masterDataGuru,
-                            absen: masterDataAbsen,
-                            siswaList: listSiswaObj,
-                            guruList: listGuruObj
+                            absen: masterDataAbsen
                         })
                     });
                 } catch (errSync) {
@@ -1757,14 +1959,16 @@
             if (wrapper && !wrapper.querySelector('canvas')) {
                 renderSingleQR(wrapper);
             }
-            const canvas = wrapper ? wrapper.querySelector('canvas') : null;
-            if (!canvas) return showToast('QR Code sedang disiapkan...', 'warning');
+            setTimeout(() => {
+                const canvas = wrapper ? wrapper.querySelector('canvas') : null;
+                if (!canvas) return showToast('QR Code sedang disiapkan...', 'warning');
 
-            document.getElementById('previewQrImg').src = canvas.toDataURL('image/png');
-            document.getElementById('previewQrNama').innerText = nama;
-            document.getElementById('previewQrId').innerText = idLabel;
-            document.getElementById('previewQrBadge').innerText = kategoriLabel;
-            document.getElementById('qrPreviewModal').classList.remove('hidden');
+                document.getElementById('previewQrImg').src = canvas.toDataURL('image/png');
+                document.getElementById('previewQrNama').innerText = nama;
+                document.getElementById('previewQrId').innerText = idLabel;
+                document.getElementById('previewQrBadge').innerText = kategoriLabel;
+                document.getElementById('qrPreviewModal').classList.remove('hidden');
+            }, 40);
         }
 
         function tutupPreviewQR() {
@@ -1955,8 +2159,25 @@
             const cleanNis = bersihkanID(row[2]);
             let rawStatus = (row[4] || 'Masuk').toString().trim();
             if (rawStatus.toLowerCase() === 'hadir') rawStatus = 'Masuk';
-            const isPulang = rawStatus.toLowerCase() === 'pulang';
-            const statusAbsen = isPulang ? 'Pulang' : 'Masuk';
+            const stLower = rawStatus.toLowerCase();
+
+            let statusAbsen = 'Masuk';
+            let badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+            let dotStyle = 'bg-emerald-500';
+
+            if (stLower === 'pulang') {
+                statusAbsen = 'Pulang';
+                badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200/60';
+                dotStyle = 'bg-amber-500';
+            } else if (stLower === 'izin') {
+                statusAbsen = 'Izin';
+                badgeStyle = 'bg-sky-50 text-sky-700 border-sky-200/60';
+                dotStyle = 'bg-sky-500';
+            } else if (stLower === 'sakit') {
+                statusAbsen = 'Sakit';
+                badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200/60';
+                dotStyle = 'bg-rose-500';
+            }
 
             const tipeUser = row[5] || (row[3] === 'Guru' ? 'Guru' : 'Siswa');
 
@@ -1980,8 +2201,8 @@
                     <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${tipeUser === 'Guru' ? 'bg-purple-50 text-purple-700 border border-purple-200/60' : 'bg-indigo-50 text-indigo-700 border border-indigo-200/60'}">${tipeUser}</span>
                 </td>
                 <td class="px-5 py-3.5">
-                    <span class="inline-flex items-center gap-1.5 ${isPulang ? 'bg-amber-50 text-amber-700 border-amber-200/60' : 'bg-emerald-50 text-emerald-700 border-emerald-200/60'} border py-1 px-2.5 rounded-full text-[11px] font-bold">
-                        <span class="w-1.5 h-1.5 rounded-full ${isPulang ? 'bg-amber-500' : 'bg-emerald-500'}"></span> ${statusAbsen}
+                    <span class="inline-flex items-center gap-1.5 ${badgeStyle} border py-1 px-2.5 rounded-full text-[11px] font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full ${dotStyle}"></span> ${statusAbsen}
                     </span>
                 </td>`;
             return tr;
@@ -2326,6 +2547,9 @@
             }
         }
 
+        // =========================================================================
+        // GENERATOR REKAPITULASI (MENDUKUNG SIMBOL ✓/I/S & DETAIL JAM MASUK-PULANG)
+        // =========================================================================
         function ubahTargetRekap() {
             const target = document.getElementById('rekapTarget').value;
             const wrapperKelas = document.getElementById('wrapperRekapKelas');
@@ -2373,7 +2597,23 @@
         }
 
         function bangunPetaKehadiran() {
-            const mapID = new Set(), mapNamaKelas = new Set(), mapNamaSaja = new Set();
+            const mapByID = new Map();
+            const mapByNama = new Map();
+
+            const updateRecord = (rec, rawStatus, timeStr) => {
+                if (rawStatus === 'masuk') {
+                    if (rec.masuk === '-' || timeStr < rec.masuk) rec.masuk = timeStr;
+                    rec.status = 'hadir';
+                } else if (rawStatus === 'pulang') {
+                    if (rec.pulang === '-' || timeStr > rec.pulang) rec.pulang = timeStr;
+                    rec.status = 'hadir';
+                } else if (rawStatus === 'izin') {
+                    if (rec.status !== 'hadir') rec.status = 'izin';
+                } else if (rawStatus === 'sakit') {
+                    if (rec.status !== 'hadir') rec.status = 'sakit';
+                }
+            };
+
             for (let i = 1; i < masterDataAbsen.length; i++) {
                 const row = masterDataAbsen[i];
                 if (!row || !row[0]) continue;
@@ -2381,28 +2621,48 @@
                 if (!d) continue;
 
                 const dateKey = formatDateKey(d);
+                const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                 const nama = (row[1] || '').toString().trim().toLowerCase();
                 const idUnik = bersihkanID(row[2]).toLowerCase();
-                const kelas = (row[3] || '').toString().trim().toLowerCase();
 
-                if (idUnik) mapID.add(`${idUnik}|${dateKey}`);
+                let rawStatus = (row[4] || 'Masuk').toString().trim().toLowerCase();
+                if (rawStatus === 'hadir') rawStatus = 'masuk';
+
+                if (idUnik) {
+                    const keyID = `${idUnik}|${dateKey}`;
+                    if (!mapByID.has(keyID)) mapByID.set(keyID, { masuk: '-', pulang: '-', status: 'alfa' });
+                    updateRecord(mapByID.get(keyID), rawStatus, timeStr);
+                }
                 if (nama) {
-                    mapNamaKelas.add(`${nama}|${kelas}|${dateKey}`);
-                    mapNamaSaja.add(`${nama}|${dateKey}`);
+                    const keyNama = `${nama}|${dateKey}`;
+                    if (!mapByNama.has(keyNama)) mapByNama.set(keyNama, { masuk: '-', pulang: '-', status: 'alfa' });
+                    updateRecord(mapByNama.get(keyNama), rawStatus, timeStr);
                 }
             }
 
             return {
-                cekHadir: (peserta, dateKey) => {
+                getDetail: (peserta, dateKey) => {
                     const cleanID = bersihkanID(peserta.nis).toLowerCase();
                     const cleanNama = (peserta.nama || '').toString().trim().toLowerCase();
-                    const cleanKelas = (peserta.kelas || '').toString().trim().toLowerCase();
-                    if (cleanID && mapID.has(`${cleanID}|${dateKey}`)) return true;
-                    if (cleanNama && mapNamaKelas.has(`${cleanNama}|${cleanKelas}|${dateKey}`)) return true;
-                    if (cleanNama && mapNamaSaja.has(`${cleanNama}|${dateKey}`)) return true;
-                    return false;
+                    if (cleanID && mapByID.has(`${cleanID}|${dateKey}`)) return mapByID.get(`${cleanID}|${dateKey}`);
+                    if (cleanNama && mapByNama.has(`${cleanNama}|${dateKey}`)) return mapByNama.get(`${cleanNama}|${dateKey}`);
+                    return { masuk: '-', pulang: '-', status: 'alfa' };
                 }
             };
+        }
+
+        function formatSelRekapHarian(det, isLibur, formatMode) {
+            if (det.status === 'hadir') {
+                if (formatMode === 'waktu') {
+                    if (det.masuk !== '-' && det.pulang !== '-') return `${det.masuk} - ${det.pulang}`;
+                    if (det.masuk !== '-') return `${det.masuk} - ...`;
+                    if (det.pulang !== '-') return `... - ${det.pulang}`;
+                }
+                return '✓';
+            }
+            if (det.status === 'izin') return formatMode === 'waktu' ? 'Izin' : 'I';
+            if (det.status === 'sakit') return formatMode === 'waktu' ? 'Sakit' : 'S';
+            return isLibur ? 'L' : '-';
         }
 
         function hitungHariEfektifRentang(startDate, endDate, hariKerja) {
@@ -2435,16 +2695,17 @@
             const kelasDipilih = isGuru ? 'Guru' : document.getElementById('rekapKelas').value;
             const tipePeriode = document.getElementById('rekapPeriodeTipe').value;
             const hariKerja = parseInt(document.getElementById('rekapHariKerja').value, 10);
+            const formatMode = document.getElementById('rekapFormatTampilan') ? document.getElementById('rekapFormatTampilan').value : 'simbol';
 
             const pesertaList = isGuru ? ambilDaftarGuruRekap() : ambilDaftarSiswaTerfilter(kelasDipilih);
             const petaAbsen = bangunPetaKehadiran();
 
-            if (tipePeriode === 'mingguan') buatRekapMingguan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
-            else if (tipePeriode === 'bulanan') buatRekapBulanan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
+            if (tipePeriode === 'mingguan') buatRekapMingguan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru, formatMode);
+            else if (tipePeriode === 'bulanan') buatRekapBulanan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru, formatMode);
             else if (tipePeriode === 'semester') buatRekapSemester(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru);
         }
 
-        function buatRekapMingguan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru = false) {
+        function buatRekapMingguan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru = false, formatMode = 'simbol') {
             const tglInput = document.getElementById('rekapTanggalMinggu').value;
             const refDate = tglInput ? new Date(tglInput + 'T00:00:00') : new Date();
             const dayOfWeek = refDate.getDay();
@@ -2466,33 +2727,35 @@
             const endDay = daftarHari[daftarHari.length - 1].dateObj;
             const rentangTeks = `${monday.getDate()} ${NAMA_BULAN_PENDEK[monday.getMonth()]} ${monday.getFullYear()} - ${endDay.getDate()} ${NAMA_BULAN_PENDEK[endDay.getMonth()]} ${endDay.getFullYear()}`;
 
-            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...daftarHari.map(h => h.label), 'Total Hadir', 'Tidak Hadir', 'Persentase'];
+            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...daftarHari.map(h => h.label), 'Hadir', 'Izin', 'Sakit', 'Alfa', '%'];
             const rows = [], perKelasData = {};
             let grandTotalHadir = 0;
             const hariEfektif = daftarHari.length;
 
             pesertaList.forEach((peserta, idx) => {
-                let hadirCount = 0;
+                let hadirCount = 0, izinCount = 0, sakitCount = 0;
                 const statusHarian = daftarHari.map(h => {
-                    const isHadir = petaAbsen.cekHadir(peserta, h.dateKey);
-                    if (isHadir) hadirCount++;
-                    return isHadir ? '✓' : '-';
+                    const det = petaAbsen.getDetail(peserta, h.dateKey);
+                    if (det.status === 'hadir') hadirCount++;
+                    else if (det.status === 'izin') izinCount++;
+                    else if (det.status === 'sakit') sakitCount++;
+                    return formatSelRekapHarian(det, false, formatMode);
                 });
 
                 grandTotalHadir += hadirCount;
-                const alfaCount = Math.max(0, hariEfektif - hadirCount);
+                const alfaCount = Math.max(0, hariEfektif - (hadirCount + izinCount + sakitCount));
                 const persen = hariEfektif > 0 ? Math.round((hadirCount / hariEfektif) * 100) : 0;
 
-                const rowData = [idx + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusHarian, hadirCount, alfaCount, `${persen}%`];
-                rows.push({ raw: rowData, statusHarian, hadirCount, alfaCount, persen, siswa: peserta });
+                const rowData = [idx + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusHarian, hadirCount, izinCount, sakitCount, alfaCount, `${persen}%`];
+                rows.push({ raw: rowData, siswa: peserta });
 
                 if (!perKelasData[peserta.kelas]) perKelasData[peserta.kelas] = [];
-                perKelasData[peserta.kelas].push([perKelasData[peserta.kelas].length + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusHarian, hadirCount, alfaCount, `${persen}%`]);
+                perKelasData[peserta.kelas].push([perKelasData[peserta.kelas].length + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusHarian, hadirCount, izinCount, sakitCount, alfaCount, `${persen}%`]);
             });
 
             const labelTarget = isGuru ? 'DEWAN GURU' : (kelasDipilih === 'Semua' ? 'SEMUA KELAS' : 'KELAS ' + kelasDipilih);
             currentRekapResult = {
-                judul: `REKAP ABSENSI MINGGUAN - ${labelTarget}`,
+                judul: `REKAP ABSENSI MINGGUAN ${formatMode === 'waktu' ? '(DETAIL JAM)' : ''} - ${labelTarget}`,
                 subJudul: `Periode Minggu: ${rentangTeks}`,
                 namaFile: `Rekap_Mingguan_${isGuru ? 'Guru' : kelasDipilih}_${formatDateKey(monday)}`,
                 headers, rows: rows.map(r => r.raw), perKelasData, isGuru
@@ -2502,7 +2765,7 @@
             renderTabelPreviewRekap(headers, rows, 'mingguan');
         }
 
-        function buatRekapBulanan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru = false) {
+        function buatRekapBulanan(pesertaList, petaAbsen, kelasDipilih, hariKerja, isGuru = false, formatMode = 'simbol') {
             const now = new Date();
             const blnInput = document.getElementById('rekapBulan').value || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const [yearStr, monthStr] = blnInput.split('-');
@@ -2520,33 +2783,34 @@
                 daftarTanggal.push({ dayNum: d, dateKey: formatDateKey(dateObj), isLibur });
             }
 
-            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...daftarTanggal.map(t => String(t.dayNum)), 'Hadir', 'Tidak Hadir', '%'];
+            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...daftarTanggal.map(t => String(t.dayNum)), 'Hadir', 'Izin', 'Sakit', 'Alfa', '%'];
             const rows = [], perKelasData = {};
             let grandTotalHadir = 0;
 
             pesertaList.forEach((peserta, idx) => {
-                let hadirCount = 0;
+                let hadirCount = 0, izinCount = 0, sakitCount = 0;
                 const statusTanggal = daftarTanggal.map(t => {
-                    const isHadir = petaAbsen.cekHadir(peserta, t.dateKey);
-                    if (isHadir) hadirCount++;
-                    if (isHadir) return '✓';
-                    return t.isLibur ? 'L' : '-';
+                    const det = petaAbsen.getDetail(peserta, t.dateKey);
+                    if (det.status === 'hadir') hadirCount++;
+                    else if (det.status === 'izin') izinCount++;
+                    else if (det.status === 'sakit') sakitCount++;
+                    return formatSelRekapHarian(det, t.isLibur, formatMode);
                 });
 
                 grandTotalHadir += hadirCount;
-                const alfaCount = Math.max(0, hariEfektif - hadirCount);
+                const alfaCount = Math.max(0, hariEfektif - (hadirCount + izinCount + sakitCount));
                 const persen = hariEfektif > 0 ? Math.round((hadirCount / hariEfektif) * 100) : 0;
 
-                const rowData = [idx + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusTanggal, hadirCount, alfaCount, `${persen}%`];
-                rows.push({ raw: rowData, statusTanggal, daftarTanggal, hadirCount, alfaCount, persen, siswa: peserta });
+                const rowData = [idx + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusTanggal, hadirCount, izinCount, sakitCount, alfaCount, `${persen}%`];
+                rows.push({ raw: rowData, siswa: peserta });
 
                 if (!perKelasData[peserta.kelas]) perKelasData[peserta.kelas] = [];
-                perKelasData[peserta.kelas].push([perKelasData[peserta.kelas].length + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusTanggal, hadirCount, alfaCount, `${persen}%`]);
+                perKelasData[peserta.kelas].push([perKelasData[peserta.kelas].length + 1, peserta.nis, peserta.nama, peserta.kelas, ...statusTanggal, hadirCount, izinCount, sakitCount, alfaCount, `${persen}%`]);
             });
 
             const labelTarget = isGuru ? 'DEWAN GURU' : (kelasDipilih === 'Semua' ? 'SEMUA KELAS' : 'KELAS ' + kelasDipilih);
             currentRekapResult = {
-                judul: `REKAP ABSENSI BULANAN - ${labelTarget}`,
+                judul: `REKAP ABSENSI BULANAN ${formatMode === 'waktu' ? '(DETAIL JAM)' : ''} - ${labelTarget}`,
                 subJudul: `Bulan: ${NAMA_BULAN[month]} ${year} (Hari Efektif: ${hariEfektif} Hari)`,
                 namaFile: `Rekap_Bulanan_${isGuru ? 'Guru' : kelasDipilih}_${NAMA_BULAN[month]}_${year}`,
                 headers, rows: rows.map(r => r.raw), perKelasData, isGuru
@@ -2567,32 +2831,34 @@
             });
 
             const totalHariEfektifSemester = infoBulan.reduce((acc, b) => acc + b.efektif, 0);
-            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...infoBulan.map(b => `${b.label} (${b.efektif}hr)`), 'Total Hadir', 'Total Tidak Hadir', 'Persentase'];
+            const headers = ['No', isGuru ? 'NIP' : 'NIS', isGuru ? 'Nama Guru' : 'Nama Siswa', isGuru ? 'Jabatan' : 'Kelas', ...infoBulan.map(b => `${b.label} (${b.efektif}hr)`), 'Hadir', 'Izin', 'Sakit', 'Alfa', '%'];
 
             const rows = [], perKelasData = {};
             let grandTotalHadir = 0;
 
             pesertaList.forEach((peserta, idx) => {
-                let totalHadirPeserta = 0;
+                let totalHadir = 0, totalIzin = 0, totalSakit = 0;
                 const rekapPerBulan = infoBulan.map(b => {
                     let hadirBulanIni = 0;
                     for (let d = 1; d <= b.daysInMonth; d++) {
                         const dateKey = `${tahun}-${String(b.monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                        if (petaAbsen.cekHadir(peserta, dateKey)) hadirBulanIni++;
+                        const det = petaAbsen.getDetail(peserta, dateKey);
+                        if (det.status === 'hadir') { hadirBulanIni++; totalHadir++; }
+                        else if (det.status === 'izin') totalIzin++;
+                        else if (det.status === 'sakit') totalSakit++;
                     }
-                    totalHadirPeserta += hadirBulanIni;
                     return hadirBulanIni;
                 });
 
-                grandTotalHadir += totalHadirPeserta;
-                const totalAlfaPeserta = Math.max(0, totalHariEfektifSemester - totalHadirPeserta);
-                const persen = totalHariEfektifSemester > 0 ? Math.round((totalHadirPeserta / totalHariEfektifSemester) * 100) : 0;
+                grandTotalHadir += totalHadir;
+                const totalAlfa = Math.max(0, totalHariEfektifSemester - (totalHadir + totalIzin + totalSakit));
+                const persen = totalHariEfektifSemester > 0 ? Math.round((totalHadir / totalHariEfektifSemester) * 100) : 0;
 
-                const rowData = [idx + 1, peserta.nis, peserta.nama, peserta.kelas, ...rekapPerBulan, totalHadirPeserta, totalAlfaPeserta, `${persen}%`];
-                rows.push({ raw: rowData, rekapPerBulan, hadirCount: totalHadirPeserta, alfaCount: totalAlfaPeserta, persen, siswa: peserta });
+                const rowData = [idx + 1, peserta.nis, peserta.nama, peserta.kelas, ...rekapPerBulan, totalHadir, totalIzin, totalSakit, totalAlfa, `${persen}%`];
+                rows.push({ raw: rowData, siswa: peserta });
 
                 if (!perKelasData[peserta.kelas]) perKelasData[peserta.kelas] = [];
-                perKelasData[peserta.kelas].push([perKelasData[peserta.kelas].length + 1, peserta.nis, peserta.nama, peserta.kelas, ...rekapPerBulan, totalHadirPeserta, totalAlfaPeserta, `${persen}%`]);
+                perKelasData[peserta.kelas].push([perKelasData[peserta.kelas].length + 1, peserta.nis, peserta.nama, peserta.kelas, ...rekapPerBulan, totalHadir, totalIzin, totalSakit, totalAlfa, `${persen}%`]);
             });
 
             const labelTarget = isGuru ? 'DEWAN GURU' : (kelasDipilih === 'Semua' ? 'SEMUA KELAS' : 'KELAS ' + kelasDipilih);
@@ -2642,19 +2908,40 @@
             let bodyHTML = '';
             rows.forEach(item => {
                 const r = item.raw;
+                const len = r.length;
                 bodyHTML += `<tr class="bg-white hover:bg-indigo-50/40 transition-colors">`;
                 r.forEach((cell, cIdx) => {
-                    if (cIdx === 0 || cIdx === 3) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center whitespace-nowrap text-slate-600">${cell}</td>`;
-                    else if (cIdx === 1) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-mono-code text-[11px] text-slate-500 whitespace-nowrap">${cell}</td>`;
-                    else if (cIdx === 2) bodyHTML += `<td class="px-3 py-2 border border-slate-100 font-bold text-slate-800 whitespace-nowrap sticky-col-nama shadow-[1px_0_0_#f1f5f9]">${cell}</td>`;
-                    else if (cIdx === r.length - 3) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-emerald-700 bg-emerald-50/50">${cell}</td>`;
-                    else if (cIdx === r.length - 2) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-rose-600 bg-rose-50/40">${cell}</td>`;
-                    else if (cIdx === r.length - 1) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-indigo-700 bg-indigo-50/40">${cell}</td>`;
+                    const strCell = String(cell);
+                    if (cIdx === 0 || cIdx === 3) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center whitespace-nowrap text-slate-600">${strCell}</td>`;
+                    else if (cIdx === 1) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-mono-code text-[11px] text-slate-500 whitespace-nowrap">${strCell}</td>`;
+                    else if (cIdx === 2) bodyHTML += `<td class="px-3 py-2 border border-slate-100 font-bold text-slate-800 whitespace-nowrap sticky-col-nama shadow-[1px_0_0_#f1f5f9]">${strCell}</td>`;
+                    else if (cIdx === len - 5) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-emerald-700 bg-emerald-50/50">${strCell}</td>`;
+                    else if (cIdx === len - 4) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-sky-700 bg-sky-50/50">${strCell}</td>`;
+                    else if (cIdx === len - 3) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-amber-700 bg-amber-50/50">${strCell}</td>`;
+                    else if (cIdx === len - 2) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-rose-600 bg-rose-50/40">${strCell}</td>`;
+                    else if (cIdx === len - 1) bodyHTML += `<td class="px-2.5 py-2 border border-slate-100 text-center font-extrabold text-indigo-700 bg-indigo-50/40">${strCell}</td>`;
                     else {
-                        if (cell === '✓') bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-emerald-600 font-extrabold bg-emerald-50/30">✓</td>`;
-                        else if (cell === 'L') bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-slate-300 bg-slate-100/70 text-[10px]">-</td>`;
-                        else if (cell === '-') bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-rose-300">-</td>`;
-                        else bodyHTML += `<td class="px-2 py-2 border border-slate-100 text-center font-semibold text-slate-700">${cell}</td>`;
+                        if (strCell === '✓') {
+                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-emerald-600 font-extrabold bg-emerald-50/30">✓</td>`;
+                        } else if (strCell.includes(':')) {
+                            const parts = strCell.split(' - ');
+                            const jamMasuk = parts[0] || '-';
+                            const jamPulang = parts[1] || '...';
+                            bodyHTML += `<td class="px-1.5 py-1.5 border border-slate-100 text-center font-mono-code text-[10px] leading-tight bg-emerald-50/30 whitespace-nowrap">
+                                <span class="text-emerald-700 font-bold block">${jamMasuk}</span>
+                                <span class="text-amber-600 font-semibold block">${jamPulang}</span>
+                            </td>`;
+                        } else if (strCell === 'I' || strCell === 'Izin') {
+                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-sky-700 font-extrabold bg-sky-50/50">${strCell}</td>`;
+                        } else if (strCell === 'S' || strCell === 'Sakit') {
+                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-amber-700 font-extrabold bg-amber-50/50">${strCell}</td>`;
+                        } else if (strCell === 'L') {
+                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-slate-300 bg-slate-100/70 text-[10px]">L</td>`;
+                        } else if (strCell === '-') {
+                            bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-rose-300">-</td>`;
+                        } else {
+                            bodyHTML += `<td class="px-2 py-2 border border-slate-100 text-center font-semibold text-slate-700">${strCell}</td>`;
+                        }
                     }
                 });
                 bodyHTML += `</tr>`;
@@ -2683,8 +2970,8 @@
                     if (i === 1) return { wch: 20 };
                     if (i === 2) return { wch: 32 };
                     if (i === 3) return { wch: 12 };
-                    if (i >= currentRekapResult.headers.length - 3) return { wch: 12 };
-                    return { wch: Math.max(4, h.toString().length + 2) };
+                    if (i >= currentRekapResult.headers.length - 5) return { wch: 10 };
+                    return { wch: Math.max(6, h.toString().length + 4) };
                 });
                 return ws;
             };
@@ -2718,7 +3005,7 @@
                 doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(71, 85, 105);
                 doc.text(currentRekapResult.subJudul, 14, 20);
 
-                const pdfBody = rowsData.map(row => row.map(cell => (cell === '✓' ? 'H' : cell)));
+                const pdfBody = rowsData.map(row => row.map(cell => (cell === '✓' ? 'H' : String(cell).replace(' - ', '\n'))));
                 const isManyCols = currentRekapResult.headers.length > 15;
 
                 doc.autoTable({
@@ -2726,18 +3013,21 @@
                     head: [currentRekapResult.headers],
                     body: pdfBody,
                     theme: 'grid',
-                    styles: { fontSize: isManyCols ? 6.5 : 8.5, cellPadding: isManyCols ? 1.2 : 2, valign: 'middle', halign: 'center' },
+                    styles: { fontSize: isManyCols ? 5.8 : 8, cellPadding: isManyCols ? 1 : 2, valign: 'middle', halign: 'center' },
                     headStyles: { fillColor: isGuru ? [147, 51, 234] : [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
                     columnStyles: {
-                        0: { cellWidth: isManyCols ? 7 : 10 },
-                        1: { cellWidth: isManyCols ? 24 : 30 },
-                        2: { halign: 'left', cellWidth: isManyCols ? 42 : 55 },
-                        3: { cellWidth: isManyCols ? 14 : 18 }
+                        0: { cellWidth: isManyCols ? 6 : 9 },
+                        1: { cellWidth: isManyCols ? 22 : 28 },
+                        2: { halign: 'left', cellWidth: isManyCols ? 38 : 50 },
+                        3: { cellWidth: isManyCols ? 12 : 16 }
                     },
                     didParseCell: function (data) {
                         if (data.section === 'body') {
-                            if (data.cell.raw === 'H') { data.cell.styles.textColor = [5, 150, 105]; data.cell.styles.fontStyle = 'bold'; }
-                            else if (data.cell.raw === 'L') { data.cell.styles.fillColor = [241, 245, 249]; data.cell.styles.textColor = [148, 163, 184]; }
+                            const raw = String(data.cell.raw);
+                            if (raw === 'H' || raw.includes(':')) { data.cell.styles.textColor = [5, 150, 105]; data.cell.styles.fontStyle = 'bold'; }
+                            else if (raw === 'I' || raw === 'Izin') { data.cell.styles.textColor = [2, 132, 199]; data.cell.styles.fontStyle = 'bold'; }
+                            else if (raw === 'S' || raw === 'Sakit') { data.cell.styles.textColor = [217, 119, 6]; data.cell.styles.fontStyle = 'bold'; }
+                            else if (raw === 'L') { data.cell.styles.fillColor = [241, 245, 249]; data.cell.styles.textColor = [148, 163, 184]; }
                         }
                     }
                 });
@@ -3005,6 +3295,7 @@
         function updateDashboardStats(dataAbsen) {
             const todayKey = formatDateKey(new Date());
             const siswaHadirUnikHariIni = new Set(), guruHadirUnikHariIni = new Set();
+            const siswaIzinHariIni = new Set(), siswaSakitHariIni = new Set();
             const sevenDaysLabels = [], sevenDaysKeys = [], sevenDaysCounts = [];
 
             for (let d = 6; d >= 0; d--) {
@@ -3021,28 +3312,41 @@
 
                 const dKey = formatDateKey(d);
                 const idUnik = (bersihkanID(dataAbsen[i][2]) || (dataAbsen[i][1] || '').toString().trim() || i).toString().toLowerCase();
+                const statusRow = (dataAbsen[i][4] || 'Masuk').toString().trim().toLowerCase();
                 const tipeUser = dataAbsen[i][5] || (dataAbsen[i][3] === 'Guru' ? 'Guru' : 'Siswa');
 
                 if(dKey === todayKey) {
-                    if (tipeUser === 'Guru') guruHadirUnikHariIni.add(idUnik);
-                    else siswaHadirUnikHariIni.add(idUnik);
+                    if (tipeUser === 'Guru') {
+                        if (statusRow === 'masuk' || statusRow === 'pulang' || statusRow === 'hadir') guruHadirUnikHariIni.add(idUnik);
+                    } else {
+                        if (statusRow === 'izin') siswaIzinHariIni.add(idUnik);
+                        else if (statusRow === 'sakit') siswaSakitHariIni.add(idUnik);
+                        else siswaHadirUnikHariIni.add(idUnik);
+                    }
                 }
 
                 const idx7 = sevenDaysKeys.indexOf(dKey);
-                if (idx7 !== -1 && tipeUser !== 'Guru') sevenDaysCounts[idx7].add(idUnik);
+                if (idx7 !== -1 && tipeUser !== 'Guru' && statusRow !== 'izin' && statusRow !== 'sakit') {
+                    sevenDaysCounts[idx7].add(idUnik);
+                }
             }
 
             const hadirSiswa = siswaHadirUnikHariIni.size;
             const hadirGuru = guruHadirUnikHariIni.size;
-            const alfa = Math.max(0, totalSiswaDatabase - hadirSiswa);
+            const izinSiswa = siswaIzinHariIni.size;
+            const sakitSiswa = siswaSakitHariIni.size;
+            const alfa = Math.max(0, totalSiswaDatabase - (hadirSiswa + izinSiswa + sakitSiswa));
 
             const persenSiswa = totalSiswaDatabase > 0 ? Math.min(100, Math.round((hadirSiswa / totalSiswaDatabase) * 100)) : 0;
-            const persenAlfa = totalSiswaDatabase > 0 ? Math.max(0, 100 - persenSiswa) : 0;
+            const persenAlfa = totalSiswaDatabase > 0 ? Math.max(0, Math.round((alfa / totalSiswaDatabase) * 100)) : 0;
             const persenGuru = totalGuruDatabase > 0 ? Math.min(100, Math.round((hadirGuru / totalGuruDatabase) * 100)) : 0;
 
             document.getElementById('stat-hadir').innerHTML = `${hadirSiswa} <span class="text-xs font-medium text-slate-400">/ ${totalSiswaDatabase}</span>`;
             document.getElementById('stat-alfa').innerText = alfa;
             document.getElementById('stat-hadir-guru').innerHTML = `${hadirGuru} <span class="text-xs font-medium text-slate-400">/ ${totalGuruDatabase}</span>`;
+
+            const elIzinSakit = document.getElementById('stat-izin-sakit-hari-ini');
+            if (elIzinSakit) elIzinSakit.innerHTML = `Izin: <strong>${izinSiswa}</strong> &bull; Sakit: <strong>${sakitSiswa}</strong>`;
 
             document.getElementById('stat-hadir-persen').innerText = `${persenSiswa}%`;
             document.getElementById('bar-hadir-siswa').style.width = `${persenSiswa}%`;
