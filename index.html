@@ -84,7 +84,7 @@
         </div>
 
         <div id="loginCard" class="relative z-10 w-full max-w-4xl bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 transition-all duration-300">
-            <!-- Panel Kiri -->
+            <!-- Panel Kiri: Branding & Informasi Sistem -->
             <div class="lg:col-span-5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-900 p-8 md:p-10 text-white flex flex-col justify-between relative overflow-hidden">
                 <div class="relative z-10">
                     <div class="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/15 mb-8">
@@ -120,7 +120,7 @@
                 <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             </div>
 
-            <!-- Panel Kanan -->
+            <!-- Panel Kanan: Form Autentikasi -->
             <div class="lg:col-span-7 p-8 md:p-10 lg:p-12 flex flex-col justify-center bg-slate-900/95 text-slate-200">
                 <div class="mb-7">
                     <span class="text-[11px] font-bold uppercase tracking-widest text-indigo-400">Otorisasi Pengelola</span>
@@ -178,7 +178,7 @@
                         <span id="loginPreloadDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                         <span id="loginPreloadStatus">Menyiapkan data di latar belakang...</span>
                     </span>
-                    <span>v2.8 Enterprise</span>
+                    <span>v2.9 Enterprise</span>
                 </div>
             </div>
         </div>
@@ -361,7 +361,7 @@
                                 <i class="fa-solid fa-bolt text-amber-400"></i> Pemantauan Real-Time
                             </span>
                             <h3 class="text-xl md:text-2xl font-extrabold tracking-tight">Ringkasan Presensi Hari Ini</h3>
-                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran Masuk, Pulang, Izin, dan Sakit secara langsung, kelola kartu QR/RFID, dan unduh laporan rekapitulasi berkala.</p>
+                            <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">Pantau statistik kehadiran Masuk (Kolom E), Pulang (Kolom G), Izin, dan Sakit secara langsung, kelola kartu QR/RFID, dan unduh laporan rekapitulasi berkala.</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5">
                             <button onclick="toggleModalInputManual()" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/15 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
@@ -390,7 +390,7 @@
                         </div>
                         <div class="mt-4">
                             <div class="flex justify-between text-[11px] font-semibold text-slate-500 mb-1">
-                                <span>Tingkat Kehadiran</span>
+                                <span id="stat-pulang-siswa-info">Sudah Pulang: 0</span>
                                 <span id="stat-hadir-persen" class="text-indigo-600">0%</span>
                             </div>
                             <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -429,7 +429,7 @@
                         </div>
                         <div class="mt-4">
                             <div class="flex justify-between text-[11px] font-semibold text-slate-500 mb-1">
-                                <span>Kehadiran Guru</span>
+                                <span id="stat-pulang-guru-info">Sudah Pulang: 0</span>
                                 <span id="stat-guru-persen" class="text-purple-600">0%</span>
                             </div>
                             <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -450,7 +450,7 @@
                             </div>
                         </div>
                         <div class="mt-4 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                            <span>Total Log Tercatat</span>
+                            <span>Total Baris Log</span>
                             <span id="stat-total-log" class="font-bold text-emerald-600">0 Data</span>
                         </div>
                     </div>
@@ -473,7 +473,7 @@
             </div>
 
             <!-- ========================================================= -->
-            <!-- TAB 2: LOG ABSEN (DENGAN FILTER & INPUT MANUAL)           -->
+            <!-- TAB 2: LOG ABSEN (KOLOM E MASUK & KOLOM G PULANG)         -->
             <!-- ========================================================= -->
             <div id="tab-logabsen" class="hidden space-y-6 tab-animate">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
@@ -483,7 +483,7 @@
                                 <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-clock-rotate-left"></i></span>
                                 Riwayat Aktivitas Presensi
                             </h3>
-                            <p class="text-xs text-slate-500 mt-1">Data diurutkan dari waktu scan paling baru (Masuk, Pulang, Izin, & Sakit)</p>
+                            <p class="text-xs text-slate-500 mt-1">Status Masuk/Izin/Sakit tercatat di Kolom E &bull; Status & Jam Pulang tercatat di Kolom G</p>
                         </div>
                         
                         <div class="flex flex-col sm:flex-row flex-wrap gap-2.5 w-full xl:w-auto action-tools">
@@ -505,7 +505,8 @@
                             <select id="filterStatusLog" onchange="filterLogAbsen()" class="border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white w-full sm:w-auto font-semibold text-slate-700" title="Filter Status Kehadiran">
                                 <option value="Semua">Semua Status</option>
                                 <option value="Masuk">Status: Masuk</option>
-                                <option value="Pulang">Status: Pulang</option>
+                                <option value="Pulang">Sudah Scan Pulang (Kol G)</option>
+                                <option value="Belum Pulang">Belum Scan Pulang</option>
                                 <option value="Izin">Status: Izin</option>
                                 <option value="Sakit">Status: Sakit</option>
                             </select>
@@ -524,16 +525,17 @@
                         <table class="min-w-full leading-normal text-sm">
                             <thead>
                                 <tr class="bg-slate-50/80 border-b border-slate-200/80 text-slate-500">
-                                    <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Waktu Scan</th>
+                                    <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Waktu Masuk</th>
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Nama Lengkap</th>
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">NIS / NIP</th>
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Kelas / Jabatan</th>
                                     <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Kategori</th>
-                                    <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Status</th>
+                                    <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Status Masuk (Kol E)</th>
+                                    <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">Status Pulang (Kol G)</th>
                                 </tr>
                             </thead>
                             <tbody id="logTableBody" class="divide-y divide-slate-100">
-                                <tr id="loadingLog"><td colspan="6" class="px-6 py-16 text-center"><p class="text-slate-400 text-sm">Memuat riwayat kehadiran...</p></td></tr>
+                                <tr id="loadingLog"><td colspan="7" class="px-6 py-16 text-center"><p class="text-slate-400 text-sm">Memuat riwayat kehadiran...</p></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -551,7 +553,7 @@
                                 <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-calendar-check"></i></span>
                                 Generator Rekapitulasi Kehadiran
                             </h3>
-                            <p class="text-xs text-slate-500 mt-1">Susun matriks kehadiran Siswa atau Guru lengkap dengan opsi Simbol (✓/I/S) atau Detail Jam Masuk & Pulang</p>
+                            <p class="text-xs text-slate-500 mt-1">Susun matriks kehadiran Siswa atau Guru lengkap dengan opsi Simbol (✓/I/S) atau Detail Jam Masuk & Pulang (Kolom G)</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5 w-full md:w-auto">
                             <button onclick="toggleModalInputManual()" class="flex-1 md:flex-initial bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold px-4 py-2.5 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-all">
@@ -853,7 +855,7 @@
                             <i class="fa-solid fa-shield-halved"></i> Keamanan & Pemulihan Data
                         </span>
                         <h3 class="text-xl md:text-2xl font-extrabold tracking-tight">Pusat Backup & Restore Database</h3>
-                        <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-2xl">Cadangkan seluruh data (Siswa, Guru, dan Riwayat Absensi) ke komputer Anda dalam satu file utuh, atau pulihkan kembali database kapan saja.</p>
+                        <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-2xl">Cadangkan seluruh data (Siswa, Guru, dan Riwayat Absensi 7 Kolom) ke komputer Anda dalam satu file utuh, atau pulihkan kembali database kapan saja.</p>
                     </div>
                     <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 text-xs space-y-1.5 min-w-[220px]">
                         <div class="flex justify-between"><span class="text-slate-300">Total Siswa:</span><span id="backupStatSiswa" class="font-bold text-white">0 Data</span></div>
@@ -871,7 +873,7 @@
                             </div>
                             <h4 class="text-lg font-extrabold text-slate-900">Backup Semua Data (Unduh Cadangan)</h4>
                             <p class="text-xs text-slate-500 leading-relaxed">
-                                Unduh salinan lengkap seluruh database <strong>SMP Negeri 1 Satui</strong> yang mencakup tabel <strong>Data Siswa</strong>, <strong>Data Guru</strong>, dan <strong>Log Kehadiran</strong>. Disarankan melakukan backup rutin setiap akhir bulan atau semester.
+                                Unduh salinan lengkap seluruh database <strong>SMP Negeri 1 Satui</strong> yang mencakup tabel <strong>Data Siswa</strong>, <strong>Data Guru</strong>, dan <strong>Log Kehadiran (Masuk & Pulang)</strong>. Disarankan melakukan backup rutin setiap akhir bulan atau semester.
                             </p>
                             <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2 text-xs text-slate-600">
                                 <div class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> Pilihan Format File Backup:</div>
@@ -967,7 +969,7 @@
                 </div>
                 <div>
                     <h3 class="font-extrabold text-lg text-slate-900">Input Absensi Manual</h3>
-                    <p class="text-xs text-slate-500">Catat kehadiran Izin, Sakit, atau susulan Masuk/Pulang</p>
+                    <p class="text-xs text-slate-500">Masuk/Izin/Sakit disimpan ke Kolom E &bull; Pulang ke Kolom G</p>
                 </div>
             </div>
 
@@ -999,7 +1001,7 @@
                         </label>
                         <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-amber-50/50 hover:border-amber-300 transition-all text-xs md:text-sm font-bold text-amber-800">
                             <input type="radio" name="manualStatus" value="Pulang" class="text-amber-600 focus:ring-amber-500">
-                            <span>Pulang</span>
+                            <span>Pulang (Kol G)</span>
                         </label>
                         <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-sky-50/50 hover:border-sky-300 transition-all text-xs md:text-sm font-bold text-sky-800">
                             <input type="radio" name="manualStatus" value="Izin" checked class="text-sky-600 focus:ring-sky-500">
@@ -1310,7 +1312,7 @@
                 if (cached && cached.siswa && cached.absen) {
                     masterDataSiswa = cached.siswa || [['NIS', 'Nama', 'Kelas']];
                     masterDataGuru = cached.guru || [['NIP', 'Nama', 'RFID']];
-                    masterDataAbsen = cached.absen || [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+                    masterDataAbsen = cached.absen || [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']];
                     
                     perbaruiSeluruhTampilanUI();
 
@@ -1383,7 +1385,7 @@
         }
 
         // =========================================================================
-        // FITUR INPUT ABSEN MANUAL (MASUK / PULANG / IZIN / SAKIT)
+        // FITUR INPUT ABSEN MANUAL (MASUK / IZIN / SAKIT KE KOL E, PULANG KE KOL G)
         // =========================================================================
         function populateDatalistManual() {
             const dl = document.getElementById('listPesertaManual');
@@ -1428,12 +1430,10 @@
                 return showToast('Harap pilih Siswa/Guru serta lengkapi Tanggal dan Jam!', 'warning');
             }
 
-            // Ekstrak NIS/NIP atau Nama dari input datalist ("2026001 - Ahmad Fauzi")
             const inputParts = rawInput.split(' - ');
             const candidateID = bersihkanID(inputParts[0]);
             const candidateNama = (inputParts[1] || rawInput).toString().trim().toLowerCase();
 
-            // Cari kecocokan di database lokal agar tampilan langsung terupdate
             let targetPeserta = null;
             for (let i = 1; i < masterDataSiswa.length; i++) {
                 const r = masterDataSiswa[i];
@@ -1484,18 +1484,53 @@
                 });
                 const resJson = await res.json();
 
-                // Tambahkan juga ke memori lokal agar instan terlihat
+                // Update array lokal dengan logika Kolom E (Masuk/Izin/Sakit) & Kolom G (Pulang)
                 if (masterDataAbsen.length === 0) {
-                    masterDataAbsen.push(['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe']);
+                    masterDataAbsen.push(['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']);
                 }
-                masterDataAbsen.push([
-                    formattedTimestamp,
-                    targetPeserta.nama,
-                    targetPeserta.id,
-                    targetPeserta.ket,
-                    statusAbsen,
-                    targetPeserta.tipe
-                ]);
+
+                let existingIdx = -1;
+                for (let i = 1; i < masterDataAbsen.length; i++) {
+                    const r = masterDataAbsen[i];
+                    if (!r || !r[0]) continue;
+                    const dRow = parseTanggalAbsen(r[0]);
+                    if (dRow && formatDateKey(dRow) === tgl && bersihkanID(r[2]) === targetPeserta.id) {
+                        existingIdx = i;
+                        break;
+                    }
+                }
+
+                if (statusAbsen.toLowerCase() === 'pulang') {
+                    const labelPulang = `Pulang (${jam})`;
+                    if (existingIdx !== -1) {
+                        masterDataAbsen[existingIdx][6] = labelPulang;
+                    } else {
+                        masterDataAbsen.push([
+                            formattedTimestamp,
+                            targetPeserta.nama,
+                            targetPeserta.id,
+                            targetPeserta.ket,
+                            '-',
+                            targetPeserta.tipe,
+                            labelPulang
+                        ]);
+                    }
+                } else {
+                    if (existingIdx !== -1) {
+                        masterDataAbsen[existingIdx][0] = formattedTimestamp;
+                        masterDataAbsen[existingIdx][4] = statusAbsen;
+                    } else {
+                        masterDataAbsen.push([
+                            formattedTimestamp,
+                            targetPeserta.nama,
+                            targetPeserta.id,
+                            targetPeserta.ket,
+                            statusAbsen,
+                            targetPeserta.tipe,
+                            ''
+                        ]);
+                    }
+                }
 
                 simpanCacheLokal();
                 perbaruiSeluruhTampilanUI();
@@ -1700,7 +1735,7 @@
                 async () => {
                     masterDataSiswa = [['NIS', 'Nama', 'Kelas']];
                     masterDataGuru = [['NIP', 'Nama', 'RFID']];
-                    masterDataAbsen = [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+                    masterDataAbsen = [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']];
                     globalSiswaList = [];
                     globalGuruList = [];
 
@@ -1728,7 +1763,7 @@
             const tglStr = formatDateKey(now);
             const payloadBackup = {
                 app: "EduAbsen SMPN 1 Satui",
-                version: "2.8",
+                version: "2.9",
                 exportedAt: now.toISOString(),
                 stats: {
                     totalSiswa: totalSiswaDatabase,
@@ -1738,7 +1773,7 @@
                 data: {
                     siswa: masterDataSiswa.length > 0 ? masterDataSiswa : [['NIS', 'Nama', 'Kelas']],
                     guru: masterDataGuru.length > 0 ? masterDataGuru : [['NIP', 'Nama', 'RFID']],
-                    absen: masterDataAbsen.length > 0 ? masterDataAbsen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']]
+                    absen: masterDataAbsen.length > 0 ? masterDataAbsen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']]
                 }
             };
 
@@ -1759,7 +1794,7 @@
 
             const sheetSiswa = XLSX.utils.aoa_to_sheet(masterDataSiswa.length > 0 ? masterDataSiswa : [['NIS', 'Nama', 'Kelas']]);
             const sheetGuru = XLSX.utils.aoa_to_sheet(masterDataGuru.length > 0 ? masterDataGuru : [['NIP', 'Nama', 'RFID']]);
-            const sheetAbsen = XLSX.utils.aoa_to_sheet(masterDataAbsen.length > 0 ? masterDataAbsen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']]);
+            const sheetAbsen = XLSX.utils.aoa_to_sheet(masterDataAbsen.length > 0 ? masterDataAbsen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']]);
 
             XLSX.utils.book_append_sheet(wb, sheetSiswa, 'Data_Siswa');
             XLSX.utils.book_append_sheet(wb, sheetGuru, 'Data_Guru');
@@ -1790,7 +1825,7 @@
                         const d = json.data || json;
                         const s = Array.isArray(d.siswa) ? d.siswa : [['NIS', 'Nama', 'Kelas']];
                         const g = Array.isArray(d.guru) ? d.guru : [['NIP', 'Nama', 'RFID']];
-                        const a = Array.isArray(d.absen) ? d.absen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+                        const a = Array.isArray(d.absen) ? d.absen : [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']];
 
                         parsedRestorePayload = { siswa: s, guru: g, absen: a };
                         tampilkanRingkasanRestore(file.name, s.length - 1, g.length - 1, a.length - 1);
@@ -1817,7 +1852,7 @@
 
                         const s = ambilSheet(['siswa'], ['NIS', 'Nama', 'Kelas']);
                         const g = ambilSheet(['guru'], ['NIP', 'Nama', 'RFID']);
-                        const a = ambilSheet(['absen', 'log'], ['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']);
+                        const a = ambilSheet(['absen', 'log'], ['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']);
 
                         parsedRestorePayload = { siswa: s, guru: g, absen: a };
                         tampilkanRingkasanRestore(file.name, s.length - 1, g.length - 1, a.length - 1);
@@ -1866,7 +1901,7 @@
             try {
                 const incomingSiswa = parsedRestorePayload.siswa || [['NIS', 'Nama', 'Kelas']];
                 const incomingGuru = parsedRestorePayload.guru || [['NIP', 'Nama', 'RFID']];
-                const incomingAbsen = parsedRestorePayload.absen || [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
+                const incomingAbsen = parsedRestorePayload.absen || [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']];
 
                 if (mode === 'replace') {
                     masterDataSiswa = incomingSiswa;
@@ -1897,12 +1932,12 @@
                         }
                     }
 
-                    if (masterDataAbsen.length === 0) masterDataAbsen = [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Kategori']];
-                    const existingLog = new Set(masterDataAbsen.slice(1).map(r => `${r[0]}|${bersihkanID(r[2])}|${(r[4] || 'Masuk').toString().trim().toLowerCase()}`));
+                    if (masterDataAbsen.length === 0) masterDataAbsen = [['Waktu', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Status', 'Tipe', 'Pulang']];
+                    const existingLog = new Set(masterDataAbsen.slice(1).map(r => `${r[0]}|${bersihkanID(r[2])}|${(r[4] || 'Masuk').toString().trim().toLowerCase()}|${(r[6] || '').toString().trim().toLowerCase()}`));
                     for (let i = 1; i < incomingAbsen.length; i++) {
                         const row = incomingAbsen[i];
                         if (!row || !row[0]) continue;
-                        const key = `${row[0]}|${bersihkanID(row[2])}|${(row[4] || 'Masuk').toString().trim().toLowerCase()}`;
+                        const key = `${row[0]}|${bersihkanID(row[2])}|${(row[4] || 'Masuk').toString().trim().toLowerCase()}|${(row[6] || '').toString().trim().toLowerCase()}`;
                         if (!existingLog.has(key)) {
                             masterDataAbsen.push(row);
                             existingLog.add(key);
@@ -2121,6 +2156,9 @@
             if (statKelas) statKelas.innerHTML = `${daftarKelasUnik.size} <span class="text-xs font-medium text-slate-400">Kelas</span>`;
         }
 
+        // =========================================================================
+        // TABEL LOG KEHADIRAN (MEMBACA KOLOM E UNTUK MASUK & KOLOM G UNTUK PULANG)
+        // =========================================================================
         function renderLogAbsen(dataAbsen) {
             const tbody = document.getElementById('logTableBody'); 
             tbody.innerHTML = '';
@@ -2132,7 +2170,7 @@
             if (statTotalLog) statTotalLog.innerText = `${totalLog} Data`;
 
             if(!dataAbsen || dataAbsen.length <= 1) { 
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-sm">Belum ada riwayat kehadiran tercatat</td></tr>`; 
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-slate-400 text-sm">Belum ada riwayat kehadiran tercatat</td></tr>`; 
                 return; 
             }
             
@@ -2161,22 +2199,30 @@
             if (rawStatus.toLowerCase() === 'hadir') rawStatus = 'Masuk';
             const stLower = rawStatus.toLowerCase();
 
-            let statusAbsen = 'Masuk';
+            // Baca Kolom G (row[6]) untuk Status & Waktu Pulang
+            let rawPulang = (row[6] || '').toString().trim().replace(/^'/, '');
+            // Kompatibilitas data lama jika dulu Pulang masih tertulis di Kolom E
+            if (!rawPulang && stLower === 'pulang' && d) {
+                rawPulang = `Pulang (${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')})`;
+            }
+            const sudahPulang = rawPulang !== '' && rawPulang !== '-';
+
+            let statusMasuk = rawStatus;
             let badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
             let dotStyle = 'bg-emerald-500';
 
-            if (stLower === 'pulang') {
-                statusAbsen = 'Pulang';
-                badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200/60';
-                dotStyle = 'bg-amber-500';
-            } else if (stLower === 'izin') {
-                statusAbsen = 'Izin';
+            if (stLower === 'izin') {
+                statusMasuk = 'Izin';
                 badgeStyle = 'bg-sky-50 text-sky-700 border-sky-200/60';
                 dotStyle = 'bg-sky-500';
             } else if (stLower === 'sakit') {
-                statusAbsen = 'Sakit';
+                statusMasuk = 'Sakit';
                 badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200/60';
                 dotStyle = 'bg-rose-500';
+            } else if (stLower === '-' || stLower === 'pulang') {
+                statusMasuk = '-';
+                badgeStyle = 'bg-slate-100 text-slate-500 border-slate-200';
+                dotStyle = 'bg-slate-400';
             }
 
             const tipeUser = row[5] || (row[3] === 'Guru' ? 'Guru' : 'Siswa');
@@ -2191,7 +2237,9 @@
             tr.setAttribute('data-nis-asli', cleanNis || '-');
             tr.setAttribute('data-kelas', (row[3] || '').toString().trim());
             tr.setAttribute('data-tipe', tipeUser);
-            tr.setAttribute('data-status', statusAbsen);
+            tr.setAttribute('data-status', statusMasuk);
+            tr.setAttribute('data-pulang', sudahPulang ? rawPulang : '-');
+
             tr.innerHTML = `
                 <td class="px-5 py-3.5 text-xs font-mono-code text-slate-600 whitespace-nowrap">${waktuTampil}</td>
                 <td class="px-5 py-3.5 text-sm font-bold text-slate-900">${row[1] || '-'}</td>
@@ -2202,8 +2250,14 @@
                 </td>
                 <td class="px-5 py-3.5">
                     <span class="inline-flex items-center gap-1.5 ${badgeStyle} border py-1 px-2.5 rounded-full text-[11px] font-bold">
-                        <span class="w-1.5 h-1.5 rounded-full ${dotStyle}"></span> ${statusAbsen}
+                        <span class="w-1.5 h-1.5 rounded-full ${dotStyle}"></span> ${statusMasuk}
                     </span>
+                </td>
+                <td class="px-5 py-3.5">
+                    ${sudahPulang 
+                        ? `<span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200/60 py-1 px-2.5 rounded-full text-[11px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> ${rawPulang}</span>`
+                        : `<span class="text-xs text-slate-400 font-medium">-</span>`
+                    }
                 </td>`;
             return tr;
         }
@@ -2218,7 +2272,16 @@
                 const matchSearch = tr.getAttribute('data-nama').includes(search) || tr.getAttribute('data-nis').includes(search);
                 const matchKelas = kelas === 'Semua' || (kelas === 'Guru' ? tr.getAttribute('data-tipe') === 'Guru' : tr.getAttribute('data-kelas') === kelas);
                 const matchTanggal = !tanggal || tr.getAttribute('data-tanggal') === tanggal;
-                const matchStatus = status === 'Semua' || tr.getAttribute('data-status').toLowerCase() === status.toLowerCase();
+                
+                let matchStatus = true;
+                if (status === 'Pulang') {
+                    matchStatus = tr.getAttribute('data-pulang') !== '-';
+                } else if (status === 'Belum Pulang') {
+                    matchStatus = tr.getAttribute('data-pulang') === '-' && tr.getAttribute('data-status').toLowerCase() === 'masuk';
+                } else if (status !== 'Semua') {
+                    matchStatus = tr.getAttribute('data-status').toLowerCase() === status.toLowerCase();
+                }
+
                 tr.style.display = (matchSearch && matchKelas && matchTanggal && matchStatus) ? '' : 'none';
             });
         }
@@ -2237,7 +2300,7 @@
             const rows = Array.from(document.querySelectorAll('.baris-log')).filter(tr => tr.style.display !== 'none');
             if (rows.length === 0) return showToast('Tidak ada data log yang sesuai filter!', 'warning');
 
-            const dataExport = [['No', 'Waktu Kehadiran', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Kategori', 'Status']];
+            const dataExport = [['No', 'Waktu Masuk', 'Nama', 'NIS/NIP', 'Kelas/Jabatan', 'Kategori', 'Status Masuk (Kol E)', 'Status Pulang (Kol G)']];
             rows.forEach((tr, idx) => {
                 dataExport.push([
                     idx + 1,
@@ -2246,22 +2309,26 @@
                     tr.getAttribute('data-nis-asli'),
                     tr.getAttribute('data-kelas'),
                     tr.getAttribute('data-tipe'),
-                    tr.getAttribute('data-status') || 'Masuk'
+                    tr.getAttribute('data-status') || 'Masuk',
+                    tr.getAttribute('data-pulang') || '-'
                 ]);
             });
 
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(dataExport);
-            ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 32 }, { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 12 }];
+            ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 32 }, { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 20 }];
             XLSX.utils.book_append_sheet(wb, ws, 'Log_Absensi');
 
             const kelas = document.getElementById('filterKelasLog').value;
-            const status = document.getElementById('filterStatusLog') ? document.getElementById('filterStatusLog').value : 'Semua';
+            const status = document.getElementById('filterStatusLog') ? document.getElementById('filterStatusLog').value.replace(/\s+/g, '_') : 'Semua';
             const tgl = document.getElementById('filterTanggalLog').value || 'Semua_Tanggal';
             XLSX.writeFile(wb, `Log_Absensi_${kelas}_${status}_${tgl}.xlsx`);
             showToast('File Excel Log Kehadiran berhasil diunduh.', 'success');
         }
 
+        // =========================================================================
+        // RENDER QR CODE & DATABASE GURU / SISWA
+        // =========================================================================
         function renderSingleQR(wrapper) {
             if (!wrapper || wrapper.querySelector('canvas')) return;
             const qrData = wrapper.getAttribute('data-qr');
@@ -2548,7 +2615,7 @@
         }
 
         // =========================================================================
-        // GENERATOR REKAPITULASI (MENDUKUNG SIMBOL ✓/I/S & DETAIL JAM MASUK-PULANG)
+        // GENERATOR REKAPITULASI (MEMBACA MASUK DI KOLOM E & PULANG DI KOLOM G)
         // =========================================================================
         function ubahTargetRekap() {
             const target = document.getElementById('rekapTarget').value;
@@ -2600,17 +2667,36 @@
             const mapByID = new Map();
             const mapByNama = new Map();
 
-            const updateRecord = (rec, rawStatus, timeStr) => {
+            const ekstrakJamPulangKolomG = (valKolomG) => {
+                if (!valKolomG) return null;
+                const str = valKolomG.toString().trim().replace(/^'/, '');
+                if (!str || str === '-') return null;
+                const matchJam = str.match(/(\d{1,2}):(\d{2})/);
+                if (matchJam) {
+                    return `${matchJam[1].padStart(2, '0')}:${matchJam[2]}`;
+                }
+                return 'Pulang';
+            };
+
+            const updateRecord = (rec, rawStatus, timeStr, valKolomG) => {
                 if (rawStatus === 'masuk') {
                     if (rec.masuk === '-' || timeStr < rec.masuk) rec.masuk = timeStr;
                     rec.status = 'hadir';
                 } else if (rawStatus === 'pulang') {
+                    // Kompatibilitas baris lama jika Pulang ada di Kolom E
                     if (rec.pulang === '-' || timeStr > rec.pulang) rec.pulang = timeStr;
                     rec.status = 'hadir';
                 } else if (rawStatus === 'izin') {
                     if (rec.status !== 'hadir') rec.status = 'izin';
                 } else if (rawStatus === 'sakit') {
                     if (rec.status !== 'hadir') rec.status = 'sakit';
+                }
+
+                // Cek Kolom G (row[6]) untuk status/jam pulang
+                const jamPulangG = ekstrakJamPulangKolomG(valKolomG);
+                if (jamPulangG) {
+                    rec.pulang = jamPulangG;
+                    rec.status = 'hadir';
                 }
             };
 
@@ -2627,16 +2713,17 @@
 
                 let rawStatus = (row[4] || 'Masuk').toString().trim().toLowerCase();
                 if (rawStatus === 'hadir') rawStatus = 'masuk';
+                const valKolomG = row[6] || '';
 
                 if (idUnik) {
                     const keyID = `${idUnik}|${dateKey}`;
                     if (!mapByID.has(keyID)) mapByID.set(keyID, { masuk: '-', pulang: '-', status: 'alfa' });
-                    updateRecord(mapByID.get(keyID), rawStatus, timeStr);
+                    updateRecord(mapByID.get(keyID), rawStatus, timeStr, valKolomG);
                 }
                 if (nama) {
                     const keyNama = `${nama}|${dateKey}`;
                     if (!mapByNama.has(keyNama)) mapByNama.set(keyNama, { masuk: '-', pulang: '-', status: 'alfa' });
-                    updateRecord(mapByNama.get(keyNama), rawStatus, timeStr);
+                    updateRecord(mapByNama.get(keyNama), rawStatus, timeStr, valKolomG);
                 }
             }
 
@@ -2923,13 +3010,13 @@
                     else {
                         if (strCell === '✓') {
                             bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-emerald-600 font-extrabold bg-emerald-50/30">✓</td>`;
-                        } else if (strCell.includes(':')) {
+                        } else if (strCell.includes(' - ') || strCell.includes(':')) {
                             const parts = strCell.split(' - ');
                             const jamMasuk = parts[0] || '-';
                             const jamPulang = parts[1] || '...';
                             bodyHTML += `<td class="px-1.5 py-1.5 border border-slate-100 text-center font-mono-code text-[10px] leading-tight bg-emerald-50/30 whitespace-nowrap">
-                                <span class="text-emerald-700 font-bold block">${jamMasuk}</span>
-                                <span class="text-amber-600 font-semibold block">${jamPulang}</span>
+                                <span class="text-emerald-700 font-bold block" title="Jam Masuk">${jamMasuk}</span>
+                                <span class="text-amber-600 font-semibold block" title="Jam Pulang (Kolom G)">${jamPulang}</span>
                             </td>`;
                         } else if (strCell === 'I' || strCell === 'Izin') {
                             bodyHTML += `<td class="px-1.5 py-2 border border-slate-100 text-center text-sky-700 font-extrabold bg-sky-50/50">${strCell}</td>`;
@@ -3295,6 +3382,7 @@
         function updateDashboardStats(dataAbsen) {
             const todayKey = formatDateKey(new Date());
             const siswaHadirUnikHariIni = new Set(), guruHadirUnikHariIni = new Set();
+            const siswaPulangHariIni = new Set(), guruPulangHariIni = new Set();
             const siswaIzinHariIni = new Set(), siswaSakitHariIni = new Set();
             const sevenDaysLabels = [], sevenDaysKeys = [], sevenDaysCounts = [];
 
@@ -3313,15 +3401,26 @@
                 const dKey = formatDateKey(d);
                 const idUnik = (bersihkanID(dataAbsen[i][2]) || (dataAbsen[i][1] || '').toString().trim() || i).toString().toLowerCase();
                 const statusRow = (dataAbsen[i][4] || 'Masuk').toString().trim().toLowerCase();
+                const kolomGPulang = (dataAbsen[i][6] || '').toString().trim().replace(/^'/, '');
+                const sudahPulangG = kolomGPulang !== '' && kolomGPulang !== '-';
                 const tipeUser = dataAbsen[i][5] || (dataAbsen[i][3] === 'Guru' ? 'Guru' : 'Siswa');
 
                 if(dKey === todayKey) {
                     if (tipeUser === 'Guru') {
-                        if (statusRow === 'masuk' || statusRow === 'pulang' || statusRow === 'hadir') guruHadirUnikHariIni.add(idUnik);
+                        if (statusRow === 'masuk' || statusRow === 'pulang' || statusRow === 'hadir' || sudahPulangG) {
+                            guruHadirUnikHariIni.add(idUnik);
+                        }
+                        if (sudahPulangG || statusRow === 'pulang') {
+                            guruPulangHariIni.add(idUnik);
+                        }
                     } else {
                         if (statusRow === 'izin') siswaIzinHariIni.add(idUnik);
                         else if (statusRow === 'sakit') siswaSakitHariIni.add(idUnik);
                         else siswaHadirUnikHariIni.add(idUnik);
+
+                        if (sudahPulangG || statusRow === 'pulang') {
+                            siswaPulangHariIni.add(idUnik);
+                        }
                     }
                 }
 
@@ -3347,6 +3446,12 @@
 
             const elIzinSakit = document.getElementById('stat-izin-sakit-hari-ini');
             if (elIzinSakit) elIzinSakit.innerHTML = `Izin: <strong>${izinSiswa}</strong> &bull; Sakit: <strong>${sakitSiswa}</strong>`;
+
+            const elPulangSiswa = document.getElementById('stat-pulang-siswa-info');
+            if (elPulangSiswa) elPulangSiswa.innerText = `Sudah Pulang: ${siswaPulangHariIni.size}`;
+
+            const elPulangGuru = document.getElementById('stat-pulang-guru-info');
+            if (elPulangGuru) elPulangGuru.innerText = `Sudah Pulang: ${guruPulangHariIni.size}`;
 
             document.getElementById('stat-hadir-persen').innerText = `${persenSiswa}%`;
             document.getElementById('bar-hadir-siswa').style.width = `${persenSiswa}%`;
